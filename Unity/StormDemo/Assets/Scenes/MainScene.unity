@@ -8859,7 +8859,7 @@ MonoBehaviour:
   requestBodyTrackingPermissionOnStartup: 0
   requestFaceTrackingPermissionOnStartup: 0
   requestEyeTrackingPermissionOnStartup: 0
-  requestScenePermissionOnStartup: 0
+  requestScenePermissionOnStartup: 1
   requestRecordAudioPermissionOnStartup: 0
   _localDimming: 1
   _trackingOriginType: 1
@@ -19609,7 +19609,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1958555982}
   - component: {fileID: 1958555984}
-  - component: {fileID: 1958555983}
+  - component: {fileID: 1958555985}
   m_Layer: 0
   m_Name: CamcorderViewCamera
   m_TagString: Untagged
@@ -19632,14 +19632,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 45833361}
   m_LocalEulerAnglesHint: {x: 5, y: 0, z: 0}
---- !u!81 &1958555983
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1958555981}
-  m_Enabled: 1
 --- !u!20 &1958555984
 Camera:
   m_ObjectHideFlags: 0
@@ -19691,6 +19683,19 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &1958555985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1958555981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc048215ddeed14e876b0913c240a6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lineColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &1959231780
 GameObject:
   m_ObjectHideFlags: 0
