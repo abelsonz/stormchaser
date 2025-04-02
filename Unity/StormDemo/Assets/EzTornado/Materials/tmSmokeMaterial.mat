@@ -8,29 +8,46 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: tmSmokeMaterial
-  m_Shader: {fileID: 210, guid: 0000000000000000f000000000000000, type: 0}
+  m_Shader: {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _ALPHABLEND_ON
-  - _NORMALMAP
+  m_ValidKeywords: []
   m_InvalidKeywords:
+  - _ALPHABLEND_ON
+  - _EDGEFADING_ON
+  - _EMISSION
   - _GLOSSYREFLECTIONS_OFF
-  - _SPECULARHIGHLIGHTS_OFF
+  - _NORMALMAP
+  - _SURFACE_TYPE_TRANSPARENT
+  - _WINDQUALITY_NONE
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
-  disabledShaderPasses:
-  - GRABPASS
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BackTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 2800000, guid: 0deaa350a0752e34fabdddee4648ef4b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ColorRamp:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -45,7 +62,31 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _DetailTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DownTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ExtraTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FrontTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LeftTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -65,14 +106,69 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _RightTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ShadowOffset:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Stamp:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SubsurfaceTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainHolesTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TranslucencyMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _UpTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WetBumpMap:
+        m_Texture: {fileID: 2800000, guid: dff8a47d233d7bc4db7331c9c085ddad, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WetMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - PixelSnap: 0
+    - _AlphaClip: 0
+    - _AlphaToMask: 0
+    - _Angle: 60
+    - _BillboardKwToggle: 0
+    - _BillboardShadowFade: 0.5
+    - _Blend: 0
+    - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
-    - _BumpScale: 0.95
+    - _BumpScale: 1
     - _CameraFadingEnabled: 0
     - _CameraFarFadeDistance: 2
     - _CameraNearFadeDistance: 1
+    - _ColorMask: 15
     - _ColorMode: 0
+    - _ColorMultiply: 2
+    - _ColorRampOffset: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -81,29 +177,96 @@ Material:
     - _DistortionStrength: 1
     - _DistortionStrengthScaled: 0.1
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
+    - _DstBlendMode: 4
+    - _EdgeFading: 1
     - _EmissionEnabled: 0
+    - _EnableExternalAlpha: 0
+    - _EnvironmentDepthBias: 0
+    - _EnvironmentReflections: 1
+    - _Exposure: 1
+    - _FadingFalloff: 0.05
+    - _Falloff: 4
     - _FlipbookMode: 0
     - _FogIntensity: 1
+    - _FresnelPower: 0.16
+    - _Gloss: 0
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HandAlpha: 1
+    - _HueVariationKwToggle: 0
+    - _Intensity: 1
     - _LightingEnabled: 1
     - _Metallic: 0
+    - _MinVisibleAlpha: 0.15
     - _Mode: 2
+    - _NormalMapKwToggle: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _Power: 15
+    - _QueueOffset: 0
+    - _ReceiveShadows: 1
+    - _RimFactor: 0.65
+    - _Rotation: 0
+    - _Scale: 0.055
+    - _SceneMeshZWrite: 0
+    - _Shininess: 0.078125
+    - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SoftParticlesEnabled: 0
     - _SoftParticlesFarFadeDistance: 1
     - _SoftParticlesNearFadeDistance: 0
-    - _SpecularHighlights: 0
+    - _SpecularHighlights: 1
+    - _SquashAmount: 1
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
+    - _SrcBlendMode: 0
+    - _StampMultipler: 1
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _Strength: 0.2
+    - _SubsurfaceIndirect: 0.25
+    - _SubsurfaceKwToggle: 0
+    - _Subtract: 0
+    - _Surface: 1
+    - _TwoSided: 2
+    - _UV: 1
     - _UVSec: 0
+    - _UseUIAlphaClip: 0
+    - _VertexColorLightmap: 0
+    - _VertexColorLightmapScale: 1
+    - _WetMapUV: 1
+    - _WindQuality: 0
+    - _WireThickness: 100
     - _ZWrite: 0
+    - _flip: 0
+    - _premultiply: 0
+    - _unmultiply: 0
     m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}
     - _Color: {r: 1.39772, g: 1.009871, b: 0.856195, a: 0.6117647}
     - _ColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
+    - _ColorBottom: {r: 0.0137021, g: 0.014443799, b: 0.0152085, a: 1}
+    - _ColorPrimary: {r: 0.39607796, g: 0.72549, b: 1, a: 1}
+    - _ColorTop: {r: 0.031896, g: 0.0343398, b: 0.0368894, a: 1}
+    - _Dimensions: {r: 1, g: 1, b: 0.1, a: 0}
+    - _EmisColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 0}
     - _EmissionColor: {r: 0.18867922, g: 0.18867922, b: 0.18867922, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _HueVariationColor: {r: 1, g: 0.5, b: 0, a: 0.1}
+    - _KeyboardPosition: {r: 0, g: 0, b: 0, a: 0}
+    - _KeyboardRotation: {r: 0, g: 0, b: 0, a: 0}
+    - _KeyboardScale: {r: 1, g: 1, b: 1, a: 0}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
     - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
+    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _SubsurfaceColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    - _TreeInstanceColor: {r: 1, g: 1, b: 1, a: 1}
+    - _TreeInstanceScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
