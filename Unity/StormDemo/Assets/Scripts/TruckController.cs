@@ -1,4 +1,3 @@
-// TruckController.cs
 using UnityEngine;
 
 public class TruckController : MonoBehaviour
