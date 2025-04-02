@@ -27,21 +27,23 @@ public class TornadoStorm : MonoBehaviour
         {
             caughtObjects[i] = transform.GetChild(i);
 
-            // Assign a unique orbit angle + radius offset
+            // Spread objects in a ring with small variation
             float angle = Random.Range(0f, Mathf.PI * 2f);
-            float radiusOffset = Random.Range(-1f, 1f);
-            float x = Mathf.Cos(angle) * (orbitRadius + radiusOffset);
-            float z = Mathf.Sin(angle) * (orbitRadius + radiusOffset);
-            float y = Random.Range(-1f, 1f);
+            float radiusOffset = Random.Range(-0.3f, 0.3f);  // Smaller variation
+            float finalRadius = orbitRadius + radiusOffset;
+
+            float x = Mathf.Cos(angle) * finalRadius;
+            float z = Mathf.Sin(angle) * finalRadius;
+            float y = Random.Range(-0.5f, 0.5f);  // Tighter vertical start too
 
             Vector3 localOffset = new Vector3(x, y, z);
             caughtObjects[i].localPosition = localOffset;
             baseLocalPositions[i] = localOffset;
 
-            // Assign each object a slightly different speed and offset
             orbitSpeeds[i] = baseRotationSpeed * Random.Range(0.7f, 1.3f);
             orbitOffsets[i] = Random.Range(0f, 10f);
         }
+
     }
 
     void Update()
