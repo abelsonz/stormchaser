@@ -9,5 +9,6 @@ EditorBuildSettings:
     path: Assets/Scenes/Zach Scene.unity
     guid: 7a0b34e33b348d445a9380638dca7717
   m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 23d202c0c8fcdee4d88cad8d0ec5a9fa, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 824e403942326724baf2ca9fc787bc82, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 61763261080a82444a0ddf69cb0c8a3c, type: 2}
