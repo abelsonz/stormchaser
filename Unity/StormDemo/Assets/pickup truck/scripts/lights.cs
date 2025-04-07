@@ -46,27 +46,32 @@ public class lights : MonoBehaviour {
 	AudioSource brokenAudio;
 
 	void Start () {
+    flare = GetComponent<LensFlare>();
+    if (flare != null) {
+        flareColor = flare.color;
+        flare.enabled = true;
+    } else {
+        Debug.LogWarning($"{gameObject.name} is missing a LensFlare component.");
+    }
 
-		flare=GetComponent<LensFlare>();
-		flareColor=flare.color;
-		flare.enabled=true;
+    if (GetComponent<Light>() != null) {
+        m_light = GetComponent<Light>();
+        initialValueOfTheLight = m_light.intensity;
+        lightColor = m_light.color;
+    }
 
-		if(GetComponent<Light>()!=null){
-			
-			m_light=GetComponent<Light>();
-			initialValueOfTheLight=m_light.intensity;
-			lightColor=m_light.color;
+    if (Camera.main != null) {
+        m_Camera = Camera.main.transform;
+    } else {
+        Debug.LogWarning("Main camera not found in the scene.");
+    }
 
-		}
+    brokenAudio = gameObject.AddComponent<AudioSource>();
+    brokenAudio.loop = false;
+    brokenAudio.volume = 1f;
+    brokenAudio.spatialBlend = 1f;
+}
 
-		m_Camera=Camera.main.transform;
-
-		brokenAudio = gameObject.AddComponent<AudioSource>();
-		brokenAudio.loop = false;
-		brokenAudio.volume = 1f;
-		brokenAudio.spatialBlend=1f;
-
-	}
 
 	void LateUpdate () {
 
