@@ -9,12 +9,13 @@ public class AutoDrive : MonoBehaviour
     [Header("Drive Path Steps")]
     public List<DriveStep> driveSteps = new List<DriveStep>();
 
+    [Header("Adaptive Braking Settings")]
+    public float brakeTorque = 3000f;
+    public float adaptiveBrakeSensitivity = 1.5f;
+
     private int currentStepIndex = 0;
     private float timer = 0f;
     private float currentTorque = 0f;
-    private float lastSpeed = 0f;
-    private float adaptiveBrakeThreshold = 0.2f;
-    private bool applyAdaptiveBrake = false;
 
     void Start()
     {
@@ -34,44 +35,46 @@ public class AutoDrive : MonoBehaviour
 
         float desiredTorque = step.wait ? 0f : step.torque;
         float currentSteer = step.steeringAngle;
-        bool applyBrake = step.wait;
 
         float currentSpeed = GetComponent<Rigidbody>().velocity.magnitude;
 
-        // Adaptive Braking if coasting downhill
-        if (desiredTorque == 0f && currentSpeed > lastSpeed + adaptiveBrakeThreshold)
-            applyAdaptiveBrake = true;
-        else if (desiredTorque > 0f || currentSpeed <= maxSpeed)
-            applyAdaptiveBrake = false;
+        bool applyBrake = false;
+        float brakeStrength = 0f;
 
-        if (currentSpeed >= maxSpeed)
-            desiredTorque = 0f;
-
-        if (applyAdaptiveBrake)
+        if (step.wait)
+        {
             applyBrake = true;
+            brakeStrength = 1f; // full brake during wait steps
+        }
+        else if (currentSpeed > maxSpeed)
+        {
+            float overspeed = currentSpeed - maxSpeed;
+            brakeStrength = Mathf.Clamp01(overspeed * adaptiveBrakeSensitivity);
+            applyBrake = true;
+        }
 
+        // Smooth torque ramping
         if (desiredTorque > 0f)
             currentTorque = Mathf.Lerp(currentTorque, desiredTorque, Time.fixedDeltaTime * 1.5f);
         else
             currentTorque = Mathf.Lerp(currentTorque, 0f, Time.fixedDeltaTime * 5f);
 
-        ApplyDrive(currentTorque, currentSteer, applyBrake);
+        ApplyDrive(currentTorque, currentSteer, applyBrake, brakeStrength);
 
         if (timer >= step.duration)
         {
             currentStepIndex++;
             timer = 0f;
         }
-
-        lastSpeed = currentSpeed;
     }
 
-    void ApplyDrive(float torqueValue, float steerAngleValue, bool brake)
+    void ApplyDrive(float torqueValue, float steerAngleValue, bool brake, float brakeStrength = 1f)
     {
         foreach (var axle in suspension.axleInfos)
         {
             axle.RotateWheels(steerAngleValue);
-            axle.SetTorque(torqueValue, suspension.maxBrakeTorque, brake);
+            float appliedBrake = brake ? brakeTorque * brakeStrength : 0f;
+            axle.SetTorque(torqueValue, appliedBrake, brake);
         }
     }
 }

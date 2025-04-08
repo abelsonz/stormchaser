@@ -14,12 +14,15 @@ public class CamcorderScript : MonoBehaviour
     [Header("Distance Filter")]
     public float maxDetectDistance = 30f;
 
+    [Header("Interaction State")]
+    public bool isHeld = false;
+
     private HashSet<GameObject> seenObjects = new();
     private List<GameObject> trackedObjects = new();
 
     public void WatchObject(GameObject obj)
     {
-        if (!trackedObjects.Contains(obj))
+        if (obj != null && !trackedObjects.Contains(obj))
             trackedObjects.Add(obj);
     }
 
@@ -32,6 +35,8 @@ public class CamcorderScript : MonoBehaviour
 
     void Update()
     {
+        if (!isHeld) return; // 🔒 Do nothing if the camcorder isn't being held
+
         foreach (GameObject obj in trackedObjects)
         {
             if (!obj || seenObjects.Contains(obj)) continue;
@@ -57,4 +62,10 @@ public class CamcorderScript : MonoBehaviour
     }
 
     public bool HasSeen(GameObject obj) => seenObjects.Contains(obj);
+
+    public void SetIsHeld(bool held)
+    {
+        isHeld = held;
+        Debug.Log($"Camcorder isHeld = {isHeld}");
+    }
 }
