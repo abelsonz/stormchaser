@@ -4187,13 +4187,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2475299586739ae4795c53a9459104b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseRotationSpeed: 15
-  verticalSpeed: 10
-  bobHeight: 0.5
-  maxHeight: 30
-  minRadius: 0.5
-  maxRadius: 15
-  chaosFactor: 10
 --- !u!136 &279283333
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -5419,11 +5412,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7347320a50fc8e94bac8d81f25f0a07a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tracker: {fileID: 381421647}
-  targets:
-  - {fileID: 1279241034}
-  - {fileID: 1399922551}
-  - {fileID: 1103191819}
 --- !u!114 &381421647
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5437,11 +5425,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 1958555984}
-  timeToRecord: 1.5
   boxMinX: 0.3
   boxMinY: 0.3
   boxMaxX: 0.7
   boxMaxY: 0.7
+  maxDetectDistance: 30
+  isHeld: 0
 --- !u!4 &381421648
 Transform:
   m_ObjectHideFlags: 0
