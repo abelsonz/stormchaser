@@ -9,8 +9,8 @@ public class TornadoController : MonoBehaviour
     public float verticalSpeed = 2f;
     public float bobHeight = 0.5f;
     public float maxHeight = 5f;
-    public float minRadius = 0.5f;
-    public float maxRadius = 3f;
+    public float minRadius = 3f;
+    public float maxRadius = 7f;
     public float chaosFactor = 0.2f;
 
     [Header("Truck Pickup")]
@@ -32,7 +32,6 @@ public class TornadoController : MonoBehaviour
     public float moveSpeed = 5f;
     public float curveStrength = 5f;
     public float curveFrequency = 0.5f;
-    public float startDelay = 3f;
 
     private List<Transform> orbitingObjects = new();
     private List<float> orbitSpeeds = new();
@@ -73,16 +72,6 @@ public class TornadoController : MonoBehaviour
     {
         UpdateOrbitingObjects();
         CheckDynamicPickups();
-
-        if (!isMoving)
-        {
-            timer += Time.deltaTime;
-            if (timer >= startDelay)
-                isMoving = true;
-            else
-                return;
-        }
-
         MoveAlongWaypoints();
     }
 
@@ -92,8 +81,10 @@ public class TornadoController : MonoBehaviour
         {
             Transform obj = orbitingObjects[i];
 
-            float heightTime = (Time.time + heightOffsets[i]) * 0.2f;
-            float height = (heightTime % 1f) * maxHeight;
+            float catchTime = heightOffsets[i];
+            float heightProgress = Mathf.Min((Time.time - catchTime) * 0.5f, maxHeight);
+            float height = heightProgress;
+
             float radius = Mathf.Lerp(minRadius, maxRadius, height / maxHeight);
 
             float angle = Time.time * orbitSpeeds[i] + i;
@@ -172,26 +163,35 @@ public class TornadoController : MonoBehaviour
 
     IEnumerator SpiralTruckUp()
     {
-        float t = 0f;
-        while (t < 1f)
+        float duration = 4f; // Total lift duration
+        float elapsed = 0f;
+        float initialY = truck.localPosition.y;
+        float targetY = truckLiftHeight;
+
+        while (elapsed < duration)
         {
-            t += Time.deltaTime * 0.5f;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
 
-            float angle = Time.time * truckSpinSpeed;
-            float radius = Mathf.Lerp(10f, truckPullRadius, t);
-            float height = Mathf.Lerp(0f, truckLiftHeight, t);
+            // Smooth height
+            float height = Mathf.Lerp(initialY, targetY, t);
 
-            float x = Mathf.Cos(angle * Mathf.Deg2Rad) * radius;
-            float z = Mathf.Sin(angle * Mathf.Deg2Rad) * radius;
+            // Gentle spiral
+            float spiralAngle = elapsed * truckSpinSpeed;
+            float radius = truckPullRadius;
+
+            float x = Mathf.Cos(spiralAngle * Mathf.Deg2Rad) * radius;
+            float z = Mathf.Sin(spiralAngle * Mathf.Deg2Rad) * radius;
 
             truck.localPosition = new Vector3(x, height, z);
-            truck.localRotation = Quaternion.Euler(0, angle, 0);
+            truck.localRotation = Quaternion.Euler(0, spiralAngle, 0);
 
             yield return null;
         }
 
         AddToOrbit(truck);
     }
+
 
     void CheckDynamicPickups()
     {
@@ -206,6 +206,7 @@ public class TornadoController : MonoBehaviour
                 if (rb) rb.isKinematic = true;
 
                 obj.SetParent(transform);
+                obj.localPosition += Vector3.up * 2f; // Quickly lift objects to avoid clipping
                 AddToOrbit(obj);
             }
         }
@@ -216,7 +217,7 @@ public class TornadoController : MonoBehaviour
         orbitingObjects.Add(obj);
         orbitSpeeds.Add(baseRotationSpeed * Random.Range(0.8f, 1.2f));
         orbitOffsets.Add(Random.Range(0f, 10f));
-        heightOffsets.Add(Random.Range(0f, 10f));
+        heightOffsets.Add(Time.time); // Store the moment it was caught
     }
 
     [ContextMenu("Auto-Find Debris")]
