@@ -2187,38 +2187,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1865603112017772757, guid: 0f059e5d480c814408dc615079587fad, type: 3}
   m_PrefabInstance: {fileID: 1315459846}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1125939740
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1125939738}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97cbeae8a70b10c44b52427d034b6336, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  waypoints:
-  - {fileID: 1797819447}
-  - {fileID: 800925999}
-  - {fileID: 957460736}
-  - {fileID: 1199189381}
-  - {fileID: 2143559456}
-  - {fileID: 246006871}
-  - {fileID: 1421592504}
-  - {fileID: 1546418794}
-  - {fileID: 1831902491}
-  - {fileID: 1067783005}
-  waypointThreshold: 3
-  moveSpeed: 20
-  curveStrength: 10
-  curveFrequency: 0.5
-  startDelay: 40
-  currentWaypointIndex: 0
-  timer: 0
-  timeOffset: 0
-  isMoving: 0
 --- !u!114 &1125939742
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2245,7 +2213,8 @@ MonoBehaviour:
   truckLiftSpeed: 2
   truckSpinSpeed: 25
   pickupTruckAtWaypoint: 7
-  pickUpCandidates: []
+  pickUpCandidates:
+  - {fileID: 0}
   pickupRange: 10
   waypoints:
   - {fileID: 1797819447}
@@ -2263,28 +2232,6 @@ MonoBehaviour:
   curveStrength: 5
   curveFrequency: 0.5
   startDelay: 40
---- !u!114 &1125939743
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1125939738}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34559b51b6525e84e81af9a582620d15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  truck: {fileID: 0}
-  tornadoStorm: {fileID: 0}
-  catchDistance: 10
-  liftSpeed: 2
-  spinSpeed: 100
-  pullRadius: 2
-  pullHeight: 5
-  hasCaughtTruck: 0
-  truckOriginalParent: {fileID: 0}
-  truckRb: {fileID: 0}
 --- !u!1 &1126498024
 GameObject:
   m_ObjectHideFlags: 0
@@ -2829,12 +2776,6 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1865603112017772757, guid: 0f059e5d480c814408dc615079587fad, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1125939740}
-    - targetCorrespondingSourceObject: {fileID: 1865603112017772757, guid: 0f059e5d480c814408dc615079587fad, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1125939743}
     - targetCorrespondingSourceObject: {fileID: 1865603112017772757, guid: 0f059e5d480c814408dc615079587fad, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1125939742}
@@ -3522,7 +3463,7 @@ MonoBehaviour:
   requestBodyTrackingPermissionOnStartup: 0
   requestFaceTrackingPermissionOnStartup: 0
   requestEyeTrackingPermissionOnStartup: 0
-  requestScenePermissionOnStartup: 0
+  requestScenePermissionOnStartup: 1
   requestRecordAudioPermissionOnStartup: 0
   _localDimming: 1
   _trackingOriginType: 1
@@ -3580,7 +3521,7 @@ Transform:
   m_GameObject: {fileID: 1716578774}
   serializedVersion: 2
   m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: 0, y: 2, z: -1.5}
+  m_LocalPosition: {x: 0, y: 1.5, z: -1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
