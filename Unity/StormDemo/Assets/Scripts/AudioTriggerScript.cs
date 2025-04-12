@@ -4,34 +4,23 @@ using UnityEngine;
 public class AudioTriggerScript : MonoBehaviour
 {
     [Header("Radio Audio Source")]
-    public GameObject radio; // The radio GameObject inside the truck
+    public GameObject radio;
     private AudioSource audioSource;
 
+    [Header("Waypoint Driver")]
+    public WaypointDriver driver;
+
     [System.Serializable]
-    public class WatchedObjectAudio
+    public class WaypointAudioClip
     {
-        public GameObject targetObject;
+        public int waypointIndex;
         public AudioClip audioClip;
     }
 
-    [System.Serializable]
-    public class TimedAudioClip
-    {
-        public AudioClip audioClip;
-        public float triggerTime; // time in seconds from game start
-    }
+    [Header("Waypoint-Triggered Audio Clips")]
+    public List<WaypointAudioClip> waypointClips = new();
 
-    [Header("Watched Objects & Their Audio Clips")]
-    public List<WatchedObjectAudio> watchList = new();
-
-    [Header("Timed Audio Clips")]
-    public List<TimedAudioClip> timedClips = new();
-
-    private CamcorderScript camcorder;
-    private HashSet<GameObject> alreadyTriggered = new();
-    private HashSet<TimedAudioClip> alreadyPlayedTimedClips = new();
-
-    private float timeSinceStart = 0f;
+    private HashSet<int> alreadyPlayed = new();
 
     void Start()
     {
@@ -45,57 +34,32 @@ public class AudioTriggerScript : MonoBehaviour
         if (audioSource == null)
             audioSource = radio.AddComponent<AudioSource>();
 
-        camcorder = GetComponent<CamcorderScript>();
-        if (camcorder == null)
+        if (driver == null)
         {
-            Debug.LogError("CamcorderScript not found on this GameObject.");
+            Debug.LogError("WaypointDriver script not assigned.");
             return;
         }
-
-        // Register watched objects with camcorder
-        foreach (var entry in watchList)
-            camcorder.WatchObject(entry.targetObject);
     }
 
     void Update()
     {
-        timeSinceStart += Time.deltaTime;
-
-        if (audioSource == null || audioSource.isPlaying)
+        if (audioSource == null || audioSource.isPlaying || driver == null)
             return;
 
-        // Check timed audio clips first
-        foreach (var timedClip in timedClips)
+        int currentWaypoint = driver.CurrentWaypointIndex;
+
+        foreach (var clip in waypointClips)
         {
-            if (alreadyPlayedTimedClips.Contains(timedClip))
-                continue;
-
-            if (timeSinceStart >= timedClip.triggerTime)
+            if (clip.waypointIndex == currentWaypoint && !alreadyPlayed.Contains(currentWaypoint))
             {
-                audioSource.clip = timedClip.audioClip;
-                audioSource.Play();
-                alreadyPlayedTimedClips.Add(timedClip);
-                Debug.Log($"[AudioManager] Playing timed clip at {timedClip.triggerTime}s");
-                return;
-            }
-        }
-
-        // Then check watched objects
-        if (!camcorder.isHeld)
-            return;
-
-        foreach (var entry in watchList)
-        {
-            if (entry.targetObject == null || alreadyTriggered.Contains(entry.targetObject))
-                continue;
-
-            if (camcorder.HasSeen(entry.targetObject))
-            {
-                audioSource.clip = entry.audioClip;
-                audioSource.Play();
-                alreadyTriggered.Add(entry.targetObject);
-                Debug.Log($"[AudioManager] Playing clip for {entry.targetObject.name}");
-                break; // Do not allow multiple clips to queue up
+                if (clip.audioClip != null)
+                {
+                    audioSource.clip = clip.audioClip;
+                    audioSource.Play();
+                    alreadyPlayed.Add(currentWaypoint);
+                    Debug.Log($"[AudioTrigger] Played clip at waypoint {currentWaypoint}");
+                }
+                break;
             }
         }
     }
