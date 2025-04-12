@@ -25,6 +25,10 @@ public class WaypointDriver : MonoBehaviour
     public bool loopPath = false;
     public bool stopAtFinalWaypoint = true;
 
+    [Header("Start Delay")]
+    [Tooltip("Time in seconds to wait before the truck starts driving to the first waypoint.")]
+    public float startDelay = 0f;
+
     public int CurrentWaypointIndex => currentWaypoint;
 
     private int currentWaypoint = 0;
@@ -41,16 +45,25 @@ public class WaypointDriver : MonoBehaviour
 
     void FixedUpdate()
     {
-if (waypoints.Count == 0)
-    return;
+        // If there are no waypoints, exit.
+        if (waypoints.Count == 0)
+            return;
 
-if (hasStopped)
-{
-    ApplyDrive(0f, 0f, true, 1f); // Full brake
-    return;
-}
+        // Check if the start delay hasn't elapsed yet.
+        if (Time.timeSinceLevelLoad < startDelay)
+        {
+            // Optionally, fully brake (or just do nothing)
+            ApplyDrive(0f, 0f, true, 1f);
+            return;
+        }
 
+        if (hasStopped)
+        {
+            ApplyDrive(0f, 0f, true, 1f); // Full brake
+            return;
+        }
 
+        // Calculate target point
         Vector3 target = waypoints[currentWaypoint].position;
         Vector3 localTarget = transform.InverseTransformPoint(target);
 
