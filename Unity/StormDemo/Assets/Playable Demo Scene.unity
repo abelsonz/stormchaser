@@ -541,7 +541,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -0.629
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1144085333484131518, guid: dff173f063a9f9f44b5c631aeff98626, type: 3}
     m_RemovedGameObjects:
     - {fileID: 8317069939913795642, guid: dff173f063a9f9f44b5c631aeff98626, type: 3}
     m_AddedGameObjects:
@@ -9322,29 +9323,15 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1123552356}
-  - component: {fileID: 1123552355}
+  - component: {fileID: 1123552358}
+  - component: {fileID: 1123552357}
   m_Layer: 0
-  m_Name: Audio Trigger Script
+  m_Name: Cam & Audio Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1123552355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1123552354}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6cdf3acfb4430604fb5d0aa5bf27763c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  radio: {fileID: 304470796}
-  driver: {fileID: 1685066798}
-  waypointClips: []
 --- !u!4 &1123552356
 Transform:
   m_ObjectHideFlags: 0
@@ -9360,6 +9347,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1123552357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1123552354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d0d685fe920b834ebc70769a3f7e694, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cam: {fileID: 1057718133}
+  boxMinX: 0.3
+  boxMinY: 0.3
+  boxMaxX: 0.7
+  boxMaxY: 0.7
+  maxDetectDistance: 10
+  isHeld: 0
+  viewableObjects: []
+--- !u!114 &1123552358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1123552354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cdf3acfb4430604fb5d0aa5bf27763c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timedAudioClips: []
+  camcorderAudioClips: []
+  camcorder: {fileID: 1123552357}
+  audioSource: {fileID: 304470797}
 --- !u!1 &1123731089
 GameObject:
   m_ObjectHideFlags: 0
