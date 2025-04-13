@@ -19,11 +19,20 @@ public class TornadoController : MonoBehaviour
     public float pickupRange = 5f;
 
     [Header("Tornado Waypoints")]
+    // Manually assign waypoints in the Inspector.
     public List<Transform> waypoints = new();
     public float distanceToWaypointThreshold = 5f;
     public float moveSpeed = 15f;
     public float curveStrength = 5f;
     public float curveFrequency = 0.5f;
+
+    [Header("Spawn/Movement Timing")]
+    [Tooltip("Time in seconds before the tornado starts moving toward waypoints (i.e. movement delay).")]
+    public float movementDelay = 48f;
+
+    [Header("Final Braking")]
+    [Tooltip("Distance from the waypoint at which the tornado should start braking.")]
+    public float finalBrakeDistance = 5f;
 
     private List<Transform> orbitingObjects = new();
     private List<float> orbitSpeeds = new();
@@ -35,7 +44,28 @@ public class TornadoController : MonoBehaviour
 
     void Start()
     {
+        // Set a random offset so the debris motion feels less uniform.
         timeOffset = Random.Range(0f, 100f);
+
+        // Make sure the tornado spawns at the first waypoint's position.
+        if (waypoints != null && waypoints.Count > 0)
+        {
+            transform.position = waypoints[0].position;
+        }
+    }
+
+    // (Optional helper if needed; not used in movement logic below.)
+    float ExtractWaypointNumber(string waypointName)
+    {
+        int startIndex = waypointName.IndexOf('(');
+        int endIndex = waypointName.IndexOf(')');
+        if (startIndex >= 0 && endIndex > startIndex)
+        {
+            string numStr = waypointName.Substring(startIndex + 1, endIndex - startIndex - 1);
+            if (float.TryParse(numStr, out float num))
+                return num;
+        }
+        return 0f;
     }
 
     void Update()
@@ -71,6 +101,10 @@ public class TornadoController : MonoBehaviour
 
     void MoveAlongWaypoints()
     {
+        // Do not move until the movement delay has elapsed.
+        if (Time.timeSinceLevelLoad < movementDelay)
+            return;
+
         if (waypoints == null || waypoints.Count == 0 || currentWaypointIndex >= waypoints.Count)
             return;
 
@@ -78,6 +112,7 @@ public class TornadoController : MonoBehaviour
         Vector3 toTarget = targetPoint.position - transform.position;
         float distance = toTarget.magnitude;
 
+        // For subsequent waypoints, if within threshold, move to next.
         if (distance < distanceToWaypointThreshold)
         {
             currentWaypointIndex++;
@@ -104,7 +139,8 @@ public class TornadoController : MonoBehaviour
 
         foreach (var obj in pickUpCandidates.ToArray())
         {
-            if (orbitingObjects.Contains(obj)) continue;
+            if (orbitingObjects.Contains(obj))
+                continue;
 
             float dist = Vector3.Distance(transform.position, obj.position);
             if (dist <= pickupRange)
@@ -137,7 +173,6 @@ public class TornadoController : MonoBehaviour
             if (!pickUpCandidates.Contains(d.transform))
                 pickUpCandidates.Add(d.transform);
         }
-
         Debug.Log($"[TornadoController] Found {pickUpCandidates.Count} debris objects with tag 'PickUp'.");
     }
 }

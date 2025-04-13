@@ -1,11 +1,26 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
+
+[System.Serializable]
+public class WaypointData
+{
+    [Tooltip("Reference to the waypoint transform.")]
+    public Transform waypoint;
+
+    [Tooltip("If checked, the truck will pause here.")]
+    public bool pause;
+
+    [Tooltip("Time (in seconds) to pause at this waypoint. Must be > 0 if Pause is checked.")]
+    public float pauseDuration;
+}
 
 public class WaypointDriver : MonoBehaviour
 {
     [Header("References")]
     public suspensionLogic suspension;
-    public List<Transform> waypoints = new();
+    // The waypoints list is now filled via the Inspector.
+    public List<WaypointData> waypoints = new List<WaypointData>();
 
     [Header("Speed Settings")]
     public float maxSpeed = 10f;
@@ -29,11 +44,16 @@ public class WaypointDriver : MonoBehaviour
     [Tooltip("Time in seconds to wait before the truck starts driving to the first waypoint.")]
     public float startDelay = 0f;
 
+    [Header("Final Braking")]
+    [Tooltip("Distance from the waypoint at which the truck should start braking if pause is enabled or if it's a final stop.")]
+    public float finalBrakeDistance = 5f;
+
     public int CurrentWaypointIndex => currentWaypoint;
 
     private int currentWaypoint = 0;
     private Rigidbody rb;
     private bool hasStopped = false;
+    private bool isPaused = false;
 
     void Start()
     {
@@ -41,37 +61,56 @@ public class WaypointDriver : MonoBehaviour
             suspension.controlled = false;
 
         rb = GetComponent<Rigidbody>();
+
+        // The auto-population code has been removed so that the inspector-assigned list is preserved.
+        // You can manually assign or modify the waypoint list (including pause settings) in the Inspector.
+    }
+
+    // Extract the number from a waypoint name formatted as "TruckWaypoint (x)"
+    float ExtractWaypointNumber(string waypointName)
+    {
+        int startIndex = waypointName.IndexOf('(');
+        int endIndex = waypointName.IndexOf(')');
+        if (startIndex >= 0 && endIndex > startIndex)
+        {
+            string numStr = waypointName.Substring(startIndex + 1, endIndex - startIndex - 1);
+            if (float.TryParse(numStr, out float num))
+                return num;
+        }
+        return 0f;
     }
 
     void FixedUpdate()
     {
-        // If there are no waypoints, exit.
         if (waypoints.Count == 0)
             return;
 
-        // Check if the start delay hasn't elapsed yet.
         if (Time.timeSinceLevelLoad < startDelay)
         {
-            // Optionally, fully brake (or just do nothing)
             ApplyDrive(0f, 0f, true, 1f);
+            return;
+        }
+
+        if (isPaused)
+        {
+            ApplyDrive(0f, 0f, true, brakeTorque);
             return;
         }
 
         if (hasStopped)
         {
-            ApplyDrive(0f, 0f, true, 1f); // Full brake
+            ApplyDrive(0f, 0f, true, brakeTorque);
             return;
         }
 
-        // Calculate target point
-        Vector3 target = waypoints[currentWaypoint].position;
+        // Get the current waypoint data from the inspector-assigned list.
+        WaypointData currentData = waypoints[currentWaypoint];
+        Vector3 target = currentData.waypoint.position;
         Vector3 localTarget = transform.InverseTransformPoint(target);
-
         float steerAngle = Mathf.Clamp(localTarget.x * steeringSensitivity, -maxSteeringAngle, maxSteeringAngle);
         float speed = rb.velocity.magnitude;
 
         float torque = speed < maxSpeed ? accelerationTorque : decelerationTorque;
-
         bool brake = false;
         float appliedBrakeTorque = 0f;
 
@@ -82,22 +121,62 @@ public class WaypointDriver : MonoBehaviour
             appliedBrakeTorque = brakeTorque * Mathf.Clamp01(overspeed * overSpeedBrakeSensitivity);
         }
 
-        bool reached = Vector3.Distance(transform.position, target) < waypointThreshold;
+        float distanceToTarget = Vector3.Distance(transform.position, target);
+        bool reached = distanceToTarget < waypointThreshold;
+        bool pauseWaypoint = currentData.pause && currentData.pauseDuration > 0f;
 
-        if (reached)
+        // If this waypoint requires pausing, then if within the final braking distance, apply full braking.
+        if (pauseWaypoint)
         {
-            currentWaypoint++;
-
-            if (currentWaypoint >= waypoints.Count)
+            if (distanceToTarget < finalBrakeDistance)
             {
-                if (loopPath)
-                    currentWaypoint = 0;
-                else if (stopAtFinalWaypoint)
+                ApplyDrive(0f, steerAngle, true, brakeTorque);
+                if (reached)
+                {
+                    isPaused = true;
+                    StartCoroutine(PauseAtWaypoint(currentData.pauseDuration));
+                }
+                return;
+            }
+        }
+        else
+        {
+            // Standard final brake for the final waypoint.
+            bool isFinalWaypoint = !loopPath && stopAtFinalWaypoint && (currentWaypoint == waypoints.Count - 1);
+            if (isFinalWaypoint && distanceToTarget < finalBrakeDistance)
+            {
+                ApplyDrive(0f, steerAngle, true, brakeTorque);
+                return;
+            }
+            if (reached)
+            {
+                if (!loopPath && stopAtFinalWaypoint && currentWaypoint == waypoints.Count - 1)
+                {
                     hasStopped = true;
+                    ApplyDrive(0f, steerAngle, true, brakeTorque);
+                    return;
+                }
+                else
+                {
+                    currentWaypoint++;
+                }
             }
         }
 
         ApplyDrive(torque, steerAngle, brake, appliedBrakeTorque);
+    }
+
+    IEnumerator PauseAtWaypoint(float waitTime)
+    {
+        float timer = 0f;
+        while (timer < waitTime)
+        {
+            ApplyDrive(0f, 0f, true, brakeTorque);
+            timer += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
+        }
+        isPaused = false;
+        currentWaypoint++;
     }
 
     void ApplyDrive(float torque, float steer, bool brake, float brakeStrength)
