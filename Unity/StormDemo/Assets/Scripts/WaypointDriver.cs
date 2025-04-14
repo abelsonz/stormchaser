@@ -11,6 +11,9 @@ public class WaypointData
     [Tooltip("If checked, the truck will pause here.")]
     public bool pause;
 
+    [Tooltip("If checked, the story decision and pause here.")]
+    public bool decision;
+
     [Tooltip("Time (in seconds) to pause at this waypoint. Must be > 0 if Pause is checked.")]
     public float pauseDuration;
 }
@@ -49,6 +52,7 @@ public class WaypointDriver : MonoBehaviour
     public float finalBrakeDistance = 5f;
 
     public int CurrentWaypointIndex => currentWaypoint;
+    public bool isStoryDecisionPoint;
 
     private int currentWaypoint = 0;
     private Rigidbody rb;
@@ -61,9 +65,15 @@ public class WaypointDriver : MonoBehaviour
             suspension.controlled = false;
 
         rb = GetComponent<Rigidbody>();
+        isStoryDecisionPoint = false;
 
         // The auto-population code has been removed so that the inspector-assigned list is preserved.
         // You can manually assign or modify the waypoint list (including pause settings) in the Inspector.
+    }
+
+    public bool isThisDecisionPoint()
+    {
+        return waypoints[currentWaypoint].decision;
     }
 
     // Extract the number from a waypoint name formatted as "TruckWaypoint (x)"
@@ -186,6 +196,26 @@ public class WaypointDriver : MonoBehaviour
             axle.RotateWheels(steer);
             float appliedBrake = brake ? brakeStrength : 0f;
             axle.SetTorque(torque, appliedBrake, brake);
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+
+        for (int i = 0; i < waypoints.Count; i++)
+        {
+            if(waypoints[i].pause)
+                Gizmos.color = Color.green;
+            else
+                Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(waypoints[i].waypoint.transform.position, 1+waypoints[i].pauseDuration/10f);
+        }
+
+        Gizmos.color = Color.blue;
+
+        for (int i = 0; i < waypoints.Count - 1; i++)
+        {
+            Gizmos.DrawLine(waypoints[i].waypoint.transform.position, waypoints[i + 1].waypoint.transform.position);
         }
     }
 }
