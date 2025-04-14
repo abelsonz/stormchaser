@@ -94,7 +94,7 @@ public class TornadoController : MonoBehaviour
             float jitterX = Mathf.PerlinNoise(Time.time + i, 0f) * chaosFactor - (chaosFactor / 2f);
             float jitterZ = Mathf.PerlinNoise(0f, Time.time + i) * chaosFactor - (chaosFactor / 2f);
 
-            Vector3 newPos = new Vector3(x + jitterX, height + bobbingY, z + jitterZ);
+            Vector3 newPos = Vector3.Lerp(obj.transform.localPosition,new Vector3(x + jitterX, height + bobbingY, z + jitterZ),Time.deltaTime);
             obj.localPosition = newPos;
         }
     }
@@ -149,7 +149,7 @@ public class TornadoController : MonoBehaviour
                 if (rb) rb.isKinematic = true;
 
                 obj.SetParent(transform);
-                obj.localPosition += Vector3.up * 2f;
+               // obj.localPosition += Vector3.up * 2f;
                 AddToOrbit(obj);
             }
         }

@@ -1740,6 +1740,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1725777752031598, guid: 37620eee6b06a6d48b23a3e6dcdefc7a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1685066803}
+    - targetCorrespondingSourceObject: {fileID: 1725777752031598, guid: 37620eee6b06a6d48b23a3e6dcdefc7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1685066808}
     - targetCorrespondingSourceObject: {fileID: 1883407122763620, guid: 37620eee6b06a6d48b23a3e6dcdefc7a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 729437552}
@@ -6464,7 +6467,7 @@ Transform:
   m_GameObject: {fileID: 662695772}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0828479, y: -0.039447132, z: 0.0030556065, w: -0.99577653}
-  m_LocalPosition: {x: -30.6, y: -33.6, z: 150.3}
+  m_LocalPosition: {x: 14.4, y: -19.6, z: 62.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10610,8 +10613,8 @@ MonoBehaviour:
   baseRotationSpeed: 1
   verticalSpeed: 1
   bobHeight: 0
-  minOrbitHeight: 0
-  maxHeight: 0
+  minOrbitHeight: 15
+  maxHeight: 30
   minRadius: 15
   maxRadius: 30
   chaosFactor: 0.2
@@ -14810,6 +14813,20 @@ Rigidbody:
   m_CorrespondingSourceObject: {fileID: 54791758338137672, guid: 37620eee6b06a6d48b23a3e6dcdefc7a, type: 3}
   m_PrefabInstance: {fileID: 88897719}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1685066808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1685066778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50fdbd6d9f73954ab4259e7ac4303bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeInterval: 0.01
+  posInterval: 0.01
 --- !u!1 &1693118303
 GameObject:
   m_ObjectHideFlags: 0
