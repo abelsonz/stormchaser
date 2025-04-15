@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -11,77 +11,105 @@ public class AudioManager : MonoBehaviour
         public float triggerTime;
     }
 
+    [Header("Timed Clips")]
     public List<TimedAudioClip> timedAudioClips;
 
-    // Reference to the camcorder script (set via the Inspector)
+    [Header("Camcorder Reference")]
     public CamcorderScript camcorder;
 
-    // Dedicated AudioSource for playing clips.
+    [Header("Audio Source")]
     public AudioSource audioSource;
 
-    // Queue to hold detection event clips that couldn’t play immediately.
-    private Queue<AudioClip> detectionQueue = new Queue<AudioClip>();
+    [Header("Dialogue Clips")]
+    public List<AudioClip> sufficientFootageClips = new List<AudioClip>();
+    public List<AudioClip> insufficientFootageClips = new List<AudioClip>();
+
+    [Header("Dialogue Delays")]
+    public float sufficientDialogueDelay = 2f;
+    public float insufficientDialogueDelay = 2f;
+
+    // Internal queue of (object, clip) pairs
+    private Queue<(GameObject obj, AudioClip clip)> detectionQueue = new Queue<(GameObject, AudioClip)>();
+
+    // Helpers to prevent double‑enqueue or replay
+    private HashSet<GameObject> queuedObjects = new HashSet<GameObject>();
+    private HashSet<GameObject> playedObjects = new HashSet<GameObject>();
 
     private float timer = 0f;
     private HashSet<TimedAudioClip> playedTimedClips = new HashSet<TimedAudioClip>();
 
-    // NEW: Lists for dialogue clips.
-    public List<AudioClip> sufficientFootageClips = new List<AudioClip>();
-    public List<AudioClip> insufficientFootageClips = new List<AudioClip>();
-
-    // NEW: Public delays between dialogue clips.
-    public float sufficientDialogueDelay = 2f;
-    public float insufficientDialogueDelay = 2f;
-
     void Start()
     {
         if (camcorder != null)
-        {
             camcorder.OnObjectDetected += HandleCamcorderDetection;
-        }
     }
 
     void Update()
     {
         timer += Time.deltaTime;
 
-        // Always prioritize any pending detection events.
+        // 1) If nothing is playing and queue is empty, run your timed clips
+        if (!audioSource.isPlaying && detectionQueue.Count == 0)
+        {
+            foreach (var t in timedAudioClips)
+            {
+                if (!playedTimedClips.Contains(t) && timer >= t.triggerTime)
+                {
+                    PlayClip(t.clip);
+                    playedTimedClips.Add(t);
+                    break;
+                }
+            }
+        }
+
+        // 2) If nothing is playing but we have detections queued, process the next valid one
         if (!audioSource.isPlaying && detectionQueue.Count > 0)
         {
-            PlayClip(detectionQueue.Dequeue());
-        }
-        // Otherwise, if nothing is playing, check for timed audio.
-        else if (!audioSource.isPlaying && detectionQueue.Count == 0)
-        {
-            foreach (var timedClip in timedAudioClips)
+            while (detectionQueue.Count > 0)
             {
-                if (!playedTimedClips.Contains(timedClip) && timer >= timedClip.triggerTime)
+                var (obj, clip) = detectionQueue.Peek();
+
+                // Only play if it's still visible right now
+                if (camcorder.IsObjectVisible(obj))
                 {
-                    Debug.Log("[AudioManager] Playing timed clip: " + timedClip.clip.name);
-                    PlayClip(timedClip.clip);
-                    playedTimedClips.Add(timedClip);
+                    PlayClip(clip);
+                    playedObjects.Add(obj);
+                    queuedObjects.Remove(obj);
+                    detectionQueue.Dequeue();
+                    StartCoroutine(ResetDetectionAfterPlayback());
                     break;
+                }
+                else
+                {
+                    // Drop it and forget so it can re‑enqueue on true re‑entry
+                    detectionQueue.Dequeue();
+                    queuedObjects.Remove(obj);
+                    camcorder.ForgetObject(obj);
                 }
             }
         }
     }
 
-    private void HandleCamcorderDetection(GameObject detectedObject, AudioClip clipFromCamcorder)
+    private void HandleCamcorderDetection(GameObject obj, AudioClip clip)
     {
-        if (clipFromCamcorder != null)
+        // Enqueue only if never queued before and never played
+        if (clip != null
+         && !queuedObjects.Contains(obj)
+         && !playedObjects.Contains(obj))
         {
-            if (!audioSource.isPlaying && detectionQueue.Count == 0)
-            {
-                PlayClip(clipFromCamcorder);
-            }
-            else
-            {
-                detectionQueue.Enqueue(clipFromCamcorder);
-            }
+            detectionQueue.Enqueue((obj, clip));
+            queuedObjects.Add(obj);
         }
     }
 
-    // Internal method to play an AudioClip.
+    private IEnumerator ResetDetectionAfterPlayback()
+    {
+        // Wait until the clip is done
+        yield return new WaitUntil(() => !audioSource.isPlaying);
+        // Allow the camcorder to fire again
+        camcorder.ResetDetection();
+    }
+
     private void PlayClip(AudioClip clip)
     {
         audioSource.Stop();
@@ -89,21 +117,19 @@ public class AudioManager : MonoBehaviour
         audioSource.Play();
     }
 
-    // Public method to trigger a specific AudioClip.
+    // Public helper for other scripts
     public void PlayAudioClip(AudioClip clip)
     {
         if (clip != null)
-        {
             PlayClip(clip);
-        }
     }
 
-    // NEW: Coroutine to play a list of dialogue clips sequentially with a delay.
+    // Public coroutine for dialogue lists
     public IEnumerator PlayDialogueList(List<AudioClip> dialogueList, float delayBetweenClips)
     {
-        foreach (AudioClip clip in dialogueList)
+        foreach (AudioClip c in dialogueList)
         {
-            PlayAudioClip(clip);
+            PlayAudioClip(c);
             yield return new WaitUntil(() => !audioSource.isPlaying);
             yield return new WaitForSeconds(delayBetweenClips);
         }

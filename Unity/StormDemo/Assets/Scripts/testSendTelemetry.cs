@@ -109,7 +109,7 @@ public class sendTelemetry : MonoBehaviour
         roll = Mathf.Deg2Rad * Mathf.DeltaAngle(transform.eulerAngles.z, 0);
 
         // Simulate engine RPM based on speed.
-        rpm = Mathf.Clamp(speed * 1000f, 0, 6000f);
+        rpm = speed * 1000f;
 
         byte[] byteData;
         int index;

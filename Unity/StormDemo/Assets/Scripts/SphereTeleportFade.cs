@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -41,16 +41,20 @@ public class SphereTeleportFade : MonoBehaviour
     void Start()
     {
         if (userCameraRig == null && Camera.main != null)
-        {
             userCameraRig = Camera.main.transform;
-        }
 
         followCarScript = userCameraRig?.GetComponent<FollowCar>();
 
         Renderer rend = GetComponent<Renderer>();
         if (rend != null)
         {
+            // Clone material to avoid modifying shared asset
             sphereMaterial = rend.material;
+
+            // Switch to Transparent mode so alpha works
+            SetupMaterialForTransparency(sphereMaterial);
+
+            // Start fully transparent
             Color c = sphereMaterial.color;
             c.a = 0f;
             sphereMaterial.color = c;
@@ -65,17 +69,15 @@ public class SphereTeleportFade : MonoBehaviour
     {
         if (followCamera)
         {
-            Vector3 cameraPos = (userCameraRig != null ? userCameraRig.position : Camera.main.transform.position);
+            Vector3 cameraPos = userCameraRig != null ? userCameraRig.position : Camera.main.transform.position;
             transform.position = cameraPos;
         }
     }
 
     public void StartTeleportSequence(bool sufficientEnding)
     {
-        Debug.Log("StartTeleportSequence called. Sufficient: " + sufficientEnding);
         isSufficientEnding = sufficientEnding;
         float delayTime = isSufficientEnding ? sufficientDelay : insufficientDelay;
-        Debug.Log("Waiting for delay: " + delayTime + " seconds before teleporting.");
         StartCoroutine(TeleportAndFadeCoroutine(delayTime));
     }
 
@@ -84,15 +86,12 @@ public class SphereTeleportFade : MonoBehaviour
         yield return new WaitForSeconds(delayTime);
 
         if (isSufficientEnding && followCarScript != null)
-        {
             followCarScript.enabled = false;
-        }
 
         followCamera = true;
 
-        Vector3 cameraPos = (userCameraRig != null ? userCameraRig.position : Camera.main.transform.position);
+        Vector3 cameraPos = userCameraRig != null ? userCameraRig.position : Camera.main.transform.position;
 
-        // Move user camera rig up by 3 meters on sufficient ending
         if (isSufficientEnding && userCameraRig != null)
         {
             userCameraRig.position += new Vector3(0f, 3f, 0f);
@@ -100,14 +99,11 @@ public class SphereTeleportFade : MonoBehaviour
         }
 
         transform.position = cameraPos;
-        Debug.Log("Teleporting sphere to userCameraRig position: " + cameraPos);
 
         if (isSufficientEnding && pickupTruck != null)
         {
             pickupTruck.SetParent(null);
-            Vector3 truckPos = cameraPos + truckTeleportOffset;
-            pickupTruck.position = truckPos;
-            Debug.Log("Teleporting pickup truck away to position: " + truckPos);
+            pickupTruck.position = cameraPos + truckTeleportOffset;
         }
 
         yield return StartCoroutine(FadeAudioAndSphere());
@@ -119,9 +115,7 @@ public class SphereTeleportFade : MonoBehaviour
         foreach (AudioSource src in audioSourcesToFade)
         {
             if (src != null)
-            {
                 originalVolumes[src] = src.volume;
-            }
         }
 
         float timer = 0f;
@@ -133,9 +127,7 @@ public class SphereTeleportFade : MonoBehaviour
             foreach (AudioSource src in audioSourcesToFade)
             {
                 if (src != null && originalVolumes.ContainsKey(src))
-                {
                     src.volume = Mathf.Lerp(originalVolumes[src], 0f, t);
-                }
             }
 
             if (sphereMaterial != null)
@@ -151,15 +143,27 @@ public class SphereTeleportFade : MonoBehaviour
         foreach (AudioSource src in audioSourcesToFade)
         {
             if (src != null)
-            {
                 src.volume = 0f;
-            }
         }
+
         if (sphereMaterial != null)
         {
             Color c = sphereMaterial.color;
             c.a = 1f;
             sphereMaterial.color = c;
         }
+    }
+
+    // Helper to configure a Standard shader material for transparency
+    private void SetupMaterialForTransparency(Material mat)
+    {
+        mat.SetFloat("_Mode", 2);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt("_ZWrite", 0);
+        mat.DisableKeyword("_ALPHATEST_ON");
+        mat.EnableKeyword("_ALPHABLEND_ON");
+        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        mat.renderQueue = 3000;
     }
 }
