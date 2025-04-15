@@ -3,40 +3,29 @@ using System.Collections;
 using System.Collections.Generic;
 
 [System.Serializable]
-public class WaypointData
-{
-    [Tooltip("Reference to the waypoint transform.")]
+public class WaypointData {
     public Transform waypoint;
-
-    [Tooltip("If checked, the truck will pause here.")]
     public bool pause;
-
-    [Tooltip("If checked, the story decision and pause here.")]
-    public bool decision;
-
-    [Tooltip("Time (in seconds) to pause at this waypoint. Must be > 0 if Pause is checked.")]
     public float pauseDuration;
 }
 
-public class WaypointDriver : MonoBehaviour
-{
-    [Header("References")]
+public class WaypointDriver : MonoBehaviour {
     public suspensionLogic suspension;
-    // The waypoints list is now filled via the Inspector.
-    public List<WaypointData> waypoints = new List<WaypointData>();
+    public CamcorderScript camcorder;
+    public AudioManager audioManager;
+    public List<WaypointData> waypoints;
 
-    [Header("Speed Settings")]
+    [Header("Speeds & Torques")]
     public float maxSpeed = 10f;
+    public float decisionSpeed = 12f;
     public float accelerationTorque = 1500f;
     public float decelerationTorque = 0f;
-
-    [Header("Steering Settings")]
-    public float steeringSensitivity = 5f;
-    public float maxSteeringAngle = 45f;
-
-    [Header("Braking Settings")]
     public float brakeTorque = 3000f;
     public float overSpeedBrakeSensitivity = 2f;
+
+    [Header("Steering")]
+    public float steeringSensitivity = 5f;
+    public float maxSteeringAngle = 45f;
 
     [Header("Waypoint Behavior")]
     public float waypointThreshold = 3f;
@@ -44,178 +33,171 @@ public class WaypointDriver : MonoBehaviour
     public bool stopAtFinalWaypoint = true;
 
     [Header("Start Delay")]
-    [Tooltip("Time in seconds to wait before the truck starts driving to the first waypoint.")]
     public float startDelay = 0f;
 
-    [Header("Final Braking")]
-    [Tooltip("Distance from the waypoint at which the truck should start braking if pause is enabled or if it's a final stop.")]
+    [Header("Decision Braking")]
     public float finalBrakeDistance = 5f;
 
-    public int CurrentWaypointIndex => currentWaypoint;
-    public bool isStoryDecisionPoint;
-
-    private int currentWaypoint = 0;
     private Rigidbody rb;
-    private bool hasStopped = false;
-    private bool isPaused = false;
+    private int currentWaypoint = 0;
+    private enum State { Driving, Pausing, DecisionBrake, DrivingToFinal, FinalBrake, Ended }
+    private State state = State.Driving;
+    private bool playedFirstInsufficient = false;
+    private bool playedSecondInsufficient = false;
+    private bool playedSufficient = false;
 
-    void Start()
-    {
-        if (suspension != null)
-            suspension.controlled = false;
+    public bool forceSufficientEnding = false;
 
+    private bool pauseCoroutineStarted = false;
+
+    void Start() {
         rb = GetComponent<Rigidbody>();
-        isStoryDecisionPoint = false;
-
-        // The auto-population code has been removed so that the inspector-assigned list is preserved.
-        // You can manually assign or modify the waypoint list (including pause settings) in the Inspector.
+        if (suspension != null) suspension.controlled = false;
     }
 
-    public bool isThisDecisionPoint()
-    {
-        return waypoints[currentWaypoint].decision;
-    }
-
-    // Extract the number from a waypoint name formatted as "TruckWaypoint (x)"
-    float ExtractWaypointNumber(string waypointName)
-    {
-        int startIndex = waypointName.IndexOf('(');
-        int endIndex = waypointName.IndexOf(')');
-        if (startIndex >= 0 && endIndex > startIndex)
-        {
-            string numStr = waypointName.Substring(startIndex + 1, endIndex - startIndex - 1);
-            if (float.TryParse(numStr, out float num))
-                return num;
-        }
-        return 0f;
-    }
-
-    void FixedUpdate()
-    {
-        if (waypoints.Count == 0)
-            return;
-
-        if (Time.timeSinceLevelLoad < startDelay)
-        {
-            ApplyDrive(0f, 0f, true, 1f);
-            return;
-        }
-
-        if (isPaused)
-        {
+    void FixedUpdate() {
+        if (waypoints == null || waypoints.Count == 0 || state == State.Ended) return;
+        if (Time.timeSinceLevelLoad < startDelay) {
             ApplyDrive(0f, 0f, true, brakeTorque);
             return;
         }
 
-        if (hasStopped)
-        {
-            ApplyDrive(0f, 0f, true, brakeTorque);
+        int finalIndex = waypoints.Count - 1;
+        int decisionIndex = Mathf.Max(0, waypoints.Count - 2);
+
+        if (currentWaypoint > finalIndex) {
+            state = State.Ended;
             return;
         }
+        if (state == State.DecisionBrake || state == State.FinalBrake) {
+            // let those states handle braking
+        }
 
-        // Get the current waypoint data from the inspector-assigned list.
-        WaypointData currentData = waypoints[currentWaypoint];
-        Vector3 target = currentData.waypoint.position;
-        Vector3 localTarget = transform.InverseTransformPoint(target);
-        float steerAngle = Mathf.Clamp(localTarget.x * steeringSensitivity, -maxSteeringAngle, maxSteeringAngle);
+        // pick target based on state
+        int targetIndex = (state == State.DrivingToFinal || state == State.FinalBrake)
+            ? finalIndex
+            : currentWaypoint;
+
+        WaypointData wp = waypoints[targetIndex];
+        Vector3 tgt = wp.waypoint.position;
+        float dist = Vector3.Distance(transform.position, tgt);
+        bool reached = dist < waypointThreshold;
+
+        // steering
+        Vector3 local = transform.InverseTransformPoint(tgt);
+        float steer = Mathf.Clamp(local.x * steeringSensitivity, -maxSteeringAngle, maxSteeringAngle);
+
+        // speed limit
+        float usedMax = (state == State.DrivingToFinal) ? decisionSpeed : maxSpeed;
         float speed = rb.velocity.magnitude;
-
-        float torque = speed < maxSpeed ? accelerationTorque : decelerationTorque;
-        bool brake = false;
-        float appliedBrakeTorque = 0f;
-
-        if (speed > maxSpeed)
-        {
-            brake = true;
-            float overspeed = speed - maxSpeed;
-            appliedBrakeTorque = brakeTorque * Mathf.Clamp01(overspeed * overSpeedBrakeSensitivity);
+        float torque = speed < usedMax ? accelerationTorque : decelerationTorque;
+        bool braking = false;
+        float appliedBrake = 0f;
+        if (speed > usedMax) {
+            braking = true;
+            float over = speed - usedMax;
+            appliedBrake = brakeTorque * Mathf.Clamp01(over * overSpeedBrakeSensitivity);
         }
 
-        float distanceToTarget = Vector3.Distance(transform.position, target);
-        bool reached = distanceToTarget < waypointThreshold;
-        bool pauseWaypoint = currentData.pause && currentData.pauseDuration > 0f;
-
-        // If this waypoint requires pausing, then if within the final braking distance, apply full braking.
-        if (pauseWaypoint)
-        {
-            if (distanceToTarget < finalBrakeDistance)
-            {
-                ApplyDrive(0f, steerAngle, true, brakeTorque);
-                if (reached)
-                {
-                    isPaused = true;
-                    StartCoroutine(PauseAtWaypoint(currentData.pauseDuration));
-                }
-                return;
-            }
-        }
-        else
-        {
-            // Standard final brake for the final waypoint.
-            bool isFinalWaypoint = !loopPath && stopAtFinalWaypoint && (currentWaypoint == waypoints.Count - 1);
-            if (isFinalWaypoint && distanceToTarget < finalBrakeDistance)
-            {
-                ApplyDrive(0f, steerAngle, true, brakeTorque);
-                return;
-            }
-            if (reached)
-            {
-                if (!loopPath && stopAtFinalWaypoint && currentWaypoint == waypoints.Count - 1)
-                {
-                    hasStopped = true;
-                    ApplyDrive(0f, steerAngle, true, brakeTorque);
-                    return;
-                }
-                else
-                {
+        switch (state) {
+            case State.Driving:
+                if (!reached) {
+                    ApplyDrive(torque, steer, braking, appliedBrake);
+                } else if (forceSufficientEnding || currentWaypoint == decisionIndex) {
+                    if (camcorder.RecordedCount >= 7) {
+                        state = State.DecisionBrake;
+                    } else {
+                        state = State.DrivingToFinal;
+                        if (!playedFirstInsufficient) {
+                            playedFirstInsufficient = true;
+                            audioManager.PlayAudioClip(audioManager.insufficientFootageClips[0]);
+                        }
+                        currentWaypoint = finalIndex;
+                    }
+                } else if (wp.pause) {
+                    state = State.Pausing;
+                    StartCoroutine(PauseAtWaypoint(wp.pauseDuration));
+                } else {
                     currentWaypoint++;
                 }
-            }
-        }
+                break;
 
-        ApplyDrive(torque, steerAngle, brake, appliedBrakeTorque);
+            case State.DecisionBrake:
+                if (dist < finalBrakeDistance) {
+                    if (!playedSufficient) {
+                        playedSufficient = true;
+                        StartCoroutine(PlayDialogueList(audioManager.sufficientFootageClips, audioManager.sufficientDialogueDelay));
+                    }
+                    ApplyDrive(0f, steer, true, brakeTorque);
+                    state = State.Ended;
+                } else {
+                    ApplyDrive(torque, steer, braking, appliedBrake);
+                }
+                break;
+
+            case State.Pausing:
+                // pause coroutine drives the transition
+                break;
+
+            case State.DrivingToFinal:
+                if (!reached) {
+                    ApplyDrive(torque, steer, braking, appliedBrake);
+                } else {
+                    state = State.FinalBrake;
+                }
+                break;
+
+            case State.FinalBrake:
+                if (!playedSecondInsufficient) {
+                    playedSecondInsufficient = true;
+                    audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
+                }
+                ApplyDrive(0f, steer, true, brakeTorque);
+                state = State.Ended;
+                break;
+        }
     }
 
-    IEnumerator PauseAtWaypoint(float waitTime)
-    {
+    IEnumerator PauseAtWaypoint(float t) {
         float timer = 0f;
-        while (timer < waitTime)
-        {
+        while (timer < t) {
             ApplyDrive(0f, 0f, true, brakeTorque);
             timer += Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
-        isPaused = false;
+        pauseCoroutineStarted = false;
+        state = State.Driving;
         currentWaypoint++;
     }
 
-    void ApplyDrive(float torque, float steer, bool brake, float brakeStrength)
-    {
-        foreach (var axle in suspension.axleInfos)
-        {
-            axle.RotateWheels(steer);
-            float appliedBrake = brake ? brakeStrength : 0f;
-            axle.SetTorque(torque, appliedBrake, brake);
+    IEnumerator PlayDialogueList(List<AudioClip> clips, float delay) {
+        foreach (var c in clips) {
+            audioManager.PlayAudioClip(c);
+            yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
+            yield return new WaitForSeconds(delay);
         }
     }
 
-    void OnDrawGizmos()
-    {
-
-        for (int i = 0; i < waypoints.Count; i++)
-        {
-            if(waypoints[i].pause)
-                Gizmos.color = Color.green;
-            else
-                Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(waypoints[i].waypoint.transform.position, 1+waypoints[i].pauseDuration/10f);
+    void ApplyDrive(float torque, float steer, bool brake, float brakeStrength) {
+        foreach (var axle in suspension.axleInfos) {
+            axle.RotateWheels(steer);
+            float b = brake ? brakeStrength : 0f;
+            axle.SetTorque(torque, b, brake);
         }
+    }
 
+    // ---- Draw Gizmos ----
+    void OnDrawGizmos() {
+        if (waypoints == null) return;
+        for (int i = 0; i < waypoints.Count; i++) {
+            Gizmos.color = waypoints[i].pause ? Color.green : Color.blue;
+            if (waypoints[i].waypoint != null)
+                Gizmos.DrawSphere(waypoints[i].waypoint.position, 1f);
+        }
         Gizmos.color = Color.blue;
-
-        for (int i = 0; i < waypoints.Count - 1; i++)
-        {
-            Gizmos.DrawLine(waypoints[i].waypoint.transform.position, waypoints[i + 1].waypoint.transform.position);
+        for (int i = 0; i < waypoints.Count - 1; i++) {
+            if (waypoints[i].waypoint != null && waypoints[i+1].waypoint != null)
+                Gizmos.DrawLine(waypoints[i].waypoint.position, waypoints[i+1].waypoint.position);
         }
     }
 }

@@ -81,4 +81,8 @@ public class CamcorderScript : MonoBehaviour
         }
         return closest;
     }
+    public int RecordedCount
+    {
+        get { return seenObjects.Count; }
+    }
 }

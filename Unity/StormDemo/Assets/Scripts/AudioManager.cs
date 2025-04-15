@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public class AudioManager : MonoBehaviour
@@ -12,23 +13,30 @@ public class AudioManager : MonoBehaviour
 
     public List<TimedAudioClip> timedAudioClips;
 
-    // Reference to the camcorder script (set this via the Inspector)
+    // Reference to the camcorder script (set via the Inspector)
     public CamcorderScript camcorder;
 
     // Dedicated AudioSource for playing clips.
     public AudioSource audioSource;
 
-    // Queue to hold detection event clips that couldn't play immediately.
+    // Queue to hold detection event clips that couldn’t play immediately.
     private Queue<AudioClip> detectionQueue = new Queue<AudioClip>();
 
     private float timer = 0f;
     private HashSet<TimedAudioClip> playedTimedClips = new HashSet<TimedAudioClip>();
 
+    // NEW: Lists for dialogue clips.
+    public List<AudioClip> sufficientFootageClips = new List<AudioClip>();
+    public List<AudioClip> insufficientFootageClips = new List<AudioClip>();
+
+    // NEW: Public delays between dialogue clips.
+    public float sufficientDialogueDelay = 2f;
+    public float insufficientDialogueDelay = 2f;
+
     void Start()
     {
         if (camcorder != null)
         {
-            // Subscribe to the camcorder detection event.
             camcorder.OnObjectDetected += HandleCamcorderDetection;
         }
     }
@@ -49,39 +57,55 @@ public class AudioManager : MonoBehaviour
             {
                 if (!playedTimedClips.Contains(timedClip) && timer >= timedClip.triggerTime)
                 {
+                    Debug.Log("[AudioManager] Playing timed clip: " + timedClip.clip.name);
                     PlayClip(timedClip.clip);
                     playedTimedClips.Add(timedClip);
-                    // Only play one timed clip at a time.
                     break;
                 }
             }
         }
     }
 
-    // Handles detection events from the camcorder.
     private void HandleCamcorderDetection(GameObject detectedObject, AudioClip clipFromCamcorder)
     {
-        // Only process if we have a valid clip.
         if (clipFromCamcorder != null)
         {
-            // If no audio is currently playing and there's no pending detection, play immediately.
             if (!audioSource.isPlaying && detectionQueue.Count == 0)
             {
                 PlayClip(clipFromCamcorder);
             }
             else
             {
-                // Queue the clip to be played later.
                 detectionQueue.Enqueue(clipFromCamcorder);
             }
         }
     }
 
-    // Plays an AudioClip using the designated AudioSource.
+    // Internal method to play an AudioClip.
     private void PlayClip(AudioClip clip)
     {
         audioSource.Stop();
         audioSource.clip = clip;
         audioSource.Play();
+    }
+
+    // Public method to trigger a specific AudioClip.
+    public void PlayAudioClip(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            PlayClip(clip);
+        }
+    }
+
+    // NEW: Coroutine to play a list of dialogue clips sequentially with a delay.
+    public IEnumerator PlayDialogueList(List<AudioClip> dialogueList, float delayBetweenClips)
+    {
+        foreach (AudioClip clip in dialogueList)
+        {
+            PlayAudioClip(clip);
+            yield return new WaitUntil(() => !audioSource.isPlaying);
+            yield return new WaitForSeconds(delayBetweenClips);
+        }
     }
 }
