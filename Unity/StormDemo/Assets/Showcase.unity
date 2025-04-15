@@ -3062,7 +3062,7 @@ MonoBehaviour:
   - targetObject: {fileID: 1668062750}
     audioClip: {fileID: 8300000, guid: 3d64718d41d038441aec908cc7a69b1e, type: 3}
   - targetObject: {fileID: 707515273}
-    audioClip: {fileID: 8300000, guid: 33d375a1d7d14044b868004696ef0915, type: 3}
+    audioClip: {fileID: 8300000, guid: fb950b34f4db4174ca4dbf205f43d8e8, type: 3}
   - targetObject: {fileID: 335830558}
     audioClip: {fileID: 8300000, guid: a1062b82e305c9241bda925bc25c9639, type: 3}
   - targetObject: {fileID: 838648239}
@@ -11182,7 +11182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   timedAudioClips:
-  - clip: {fileID: 8300000, guid: 6b903a8473601a7479d69387f92b8922, type: 3}
+  - clip: {fileID: 8300000, guid: 869e14d62eda50a4b942c5df1884cfd4, type: 3}
     triggerTime: 4
   - clip: {fileID: 8300000, guid: 36a02641c1792504298297de937c5c71, type: 3}
     triggerTime: 17
@@ -11190,7 +11190,7 @@ MonoBehaviour:
     triggerTime: 27
   - clip: {fileID: 8300000, guid: 81a365cc59d136a499623034ca134904, type: 3}
     triggerTime: 37
-  - clip: {fileID: 8300000, guid: f9b2a47b9db896848a10f621b34b7a93, type: 3}
+  - clip: {fileID: 8300000, guid: b9bf9713a3db7ae40884b8f6deb65904, type: 3}
     triggerTime: 49
   camcorder: {fileID: 240047376}
   audioSource: {fileID: 304470797}
@@ -11199,9 +11199,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: f2b909b278dcc1048b6b304ebc8e98d4, type: 3}
   insufficientFootageClips:
   - {fileID: 8300000, guid: a0fca5a803cce824ea0a04a1943b1da7, type: 3}
-  - {fileID: 8300000, guid: 124afe0013d000347a92721f7faa6118, type: 3}
-  sufficientDialogueDelay: 2
-  insufficientDialogueDelay: 2
+  - {fileID: 8300000, guid: bfd2751d52eeed04a843cfa6802dd908, type: 3}
+  sufficientDialogueDelay: 1
+  insufficientDialogueDelay: 1
 --- !u!1 &1123731089
 GameObject:
   m_ObjectHideFlags: 0
