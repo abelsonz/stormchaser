@@ -15,26 +15,35 @@ public class SphereTeleportFade : MonoBehaviour
     public float fadeDuration = 2.0f;
     [Tooltip("List of audio sources to fade out.")]
     public List<AudioSource> audioSourcesToFade;
-
+    
     [Header("Camera Rig Reference")]
-    [Tooltip("User camera rig reference (defaults to Camera.main if left empty).")]
+    [Tooltip("User camera rig reference (defaults to Camera.main if left empty)." )]
     public Transform userCameraRig;
+    
+    [Header("Additional Objects")]
+    [Tooltip("Reference to the pickup truck object that should be teleported away on sufficient ending.")]
+    public Transform pickupTruck;
+    [Tooltip("Offset vector to use when teleporting the pickup truck away from the user.")]
+    public Vector3 truckTeleportOffset = new Vector3(50f, 0f, 0f);
 
-    // Cached material for the sphere
+    // Cached material for the sphere.
     private Material sphereMaterial;
-
-    // Ending flag set through method parameter or externally.
+    
+    // Ending flag.
     private bool isSufficientEnding = true;
-
+    
+    // Flag to indicate that the sphere should follow the camera rig every frame.
+    private bool followCamera = false;
+    
     void Start()
     {
-        // Use main camera if no camera rig is assigned.
+        // Use Camera.main if no camera rig is assigned.
         if (userCameraRig == null && Camera.main != null)
         {
             userCameraRig = Camera.main.transform;
         }
-
-        // Set up the sphere material and make it fully transparent initially.
+    
+        // Get the Renderer and set the material to fully transparent.
         Renderer rend = GetComponent<Renderer>();
         if (rend != null)
         {
@@ -48,40 +57,64 @@ public class SphereTeleportFade : MonoBehaviour
             Debug.LogError("SphereTeleportFade: Renderer not found!");
         }
     }
-
+    
+    void Update()
+    {
+        // Once followCamera is enabled, update the sphere's position every frame.
+        if (followCamera)
+        {
+            Vector3 cameraPos = (userCameraRig != null ? userCameraRig.position : Camera.main.transform.position);
+            transform.position = cameraPos;
+        }
+    }
+    
     /// <summary>
-    /// Call this method (or trigger via an event) when your dialogues complete.
+    /// Trigger the teleport sequence. Once called, after the delay the sphere
+    /// will continuously follow the camera rig and execute the fade effect.
+    /// Additionally, if the sufficient ending is triggered, the pickup truck is teleported away.
     /// </summary>
-    /// <param name="sufficientEnding">True for sufficient footage ending; false for insufficient.</param>
+    /// <param name="sufficientEnding">True for sufficient ending; false for insufficient.</param>
     public void StartTeleportSequence(bool sufficientEnding)
     {
+        Debug.Log("StartTeleportSequence called. Sufficient: " + sufficientEnding);
         isSufficientEnding = sufficientEnding;
         float delayTime = isSufficientEnding ? sufficientDelay : insufficientDelay;
+        Debug.Log("Waiting for delay: " + delayTime + " seconds before teleporting.");
         StartCoroutine(TeleportAndFadeCoroutine(delayTime));
     }
-
+    
     private IEnumerator TeleportAndFadeCoroutine(float delayTime)
     {
-        // Wait for the appropriate delay after dialogue finishes.
+        // Wait for the appropriate delay after dialogue completes.
         yield return new WaitForSeconds(delayTime);
+        
+        // Enable continuous following of the camera rig.
+        followCamera = true;
+        
+        // Determine camera position.
+        Vector3 cameraPos = (userCameraRig != null ? userCameraRig.position : Camera.main.transform.position);
 
-        // Teleport sphere to the user's camera rig.
-        if (userCameraRig != null)
+        // Immediately update sphere position.
+        transform.position = cameraPos;
+        Debug.Log("Teleporting sphere to userCameraRig position: " + cameraPos);
+        
+        // If this is a sufficient ending, teleport the pickup truck away.
+        if (isSufficientEnding && pickupTruck != null)
         {
-            transform.position = userCameraRig.position;
+            // Detach pickup truck from any parent to avoid moving with camera rig.
+            pickupTruck.SetParent(null);
+            Vector3 truckPos = cameraPos + truckTeleportOffset;
+            pickupTruck.position = truckPos;
+            Debug.Log("Teleporting pickup truck away to position: " + truckPos);
         }
-        else
-        {
-            Debug.LogError("SphereTeleportFade: User camera rig not assigned!");
-        }
-
-        // Start the fading effect.
+    
+        // Start the fade effect (from transparent to opaque).
         yield return StartCoroutine(FadeAudioAndSphere());
     }
-
+    
     private IEnumerator FadeAudioAndSphere()
     {
-        // Capture the original volumes of each audio source.
+        // Store the original volumes.
         Dictionary<AudioSource, float> originalVolumes = new Dictionary<AudioSource, float>();
         foreach (AudioSource src in audioSourcesToFade)
         {
@@ -90,14 +123,14 @@ public class SphereTeleportFade : MonoBehaviour
                 originalVolumes[src] = src.volume;
             }
         }
-
+    
         float timer = 0f;
         while (timer < fadeDuration)
         {
             timer += Time.deltaTime;
             float t = timer / fadeDuration;
-
-            // Fade each audio source to zero.
+    
+            // Fade audio sources.
             foreach (AudioSource src in audioSourcesToFade)
             {
                 if (src != null && originalVolumes.ContainsKey(src))
@@ -105,19 +138,19 @@ public class SphereTeleportFade : MonoBehaviour
                     src.volume = Mathf.Lerp(originalVolumes[src], 0f, t);
                 }
             }
-
-            // Fade sphere from transparent to opaque.
+    
+            // Fade sphere material from transparent to opaque.
             if (sphereMaterial != null)
             {
                 Color c = sphereMaterial.color;
                 c.a = Mathf.Lerp(0f, 1f, t);
                 sphereMaterial.color = c;
             }
-
+    
             yield return null;
         }
-
-        // Ensure final values are set.
+    
+        // Ensure final volumes and alpha are set.
         foreach (AudioSource src in audioSourcesToFade)
         {
             if (src != null)

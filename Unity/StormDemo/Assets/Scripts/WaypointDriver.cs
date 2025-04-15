@@ -38,6 +38,14 @@ public class WaypointDriver : MonoBehaviour {
     [Header("Decision Braking")]
     public float finalBrakeDistance = 5f;
 
+    // Reference to the SphereTeleportFade component.
+    public SphereTeleportFade sphereTeleportFade;
+
+    // Override Options for Recorded Count
+    [Header("Override Options")]
+    public bool overrideRecordedCount = false;
+    public int manualRecordedCount = 0;
+
     private Rigidbody rb;
     private int currentWaypoint = 0;
     private enum State { Driving, Pausing, DecisionBrake, DrivingToFinal, FinalBrake, Ended }
@@ -46,17 +54,20 @@ public class WaypointDriver : MonoBehaviour {
     private bool playedSecondInsufficient = false;
     private bool playedSufficient = false;
 
-    public bool forceSufficientEnding = false;
+    // Remember if the ending is sufficient (true) or insufficient (false)
+    private bool endingSufficient = false;
 
     private bool pauseCoroutineStarted = false;
 
     void Start() {
         rb = GetComponent<Rigidbody>();
-        if (suspension != null) suspension.controlled = false;
+        if (suspension != null)
+            suspension.controlled = false;
     }
 
     void FixedUpdate() {
-        if (waypoints == null || waypoints.Count == 0 || state == State.Ended) return;
+        if (waypoints == null || waypoints.Count == 0 || state == State.Ended)
+            return;
         if (Time.timeSinceLevelLoad < startDelay) {
             ApplyDrive(0f, 0f, true, brakeTorque);
             return;
@@ -83,11 +94,11 @@ public class WaypointDriver : MonoBehaviour {
         float dist = Vector3.Distance(transform.position, tgt);
         bool reached = dist < waypointThreshold;
 
-        // steering
+        // steering calculation
         Vector3 local = transform.InverseTransformPoint(tgt);
         float steer = Mathf.Clamp(local.x * steeringSensitivity, -maxSteeringAngle, maxSteeringAngle);
 
-        // speed limit
+        // speed limit and driving torque
         float usedMax = (state == State.DrivingToFinal) ? decisionSpeed : maxSpeed;
         float speed = rb.velocity.magnitude;
         float torque = speed < usedMax ? accelerationTorque : decelerationTorque;
@@ -103,11 +114,17 @@ public class WaypointDriver : MonoBehaviour {
             case State.Driving:
                 if (!reached) {
                     ApplyDrive(torque, steer, braking, appliedBrake);
-                } else if (forceSufficientEnding || currentWaypoint == decisionIndex) {
-                    if (camcorder.RecordedCount >= 7) {
+                } else if (currentWaypoint == decisionIndex) {
+                    // Use manual override if enabled.
+                    int effectiveCount = overrideRecordedCount ? manualRecordedCount : camcorder.RecordedCount;
+                    
+                    if (effectiveCount >= 7) {
+                        endingSufficient = true;
                         state = State.DecisionBrake;
                     } else {
+                        endingSufficient = false;
                         state = State.DrivingToFinal;
+                        // For insufficient ending, play the first dialogue clip once.
                         if (!playedFirstInsufficient) {
                             playedFirstInsufficient = true;
                             audioManager.PlayAudioClip(audioManager.insufficientFootageClips[0]);
@@ -124,9 +141,10 @@ public class WaypointDriver : MonoBehaviour {
 
             case State.DecisionBrake:
                 if (dist < finalBrakeDistance) {
-                    if (!playedSufficient) {
+                    if (endingSufficient && !playedSufficient) {
                         playedSufficient = true;
-                        StartCoroutine(PlayDialogueList(audioManager.sufficientFootageClips, audioManager.sufficientDialogueDelay));
+                        // Trigger sufficient-ending dialogue and then sphere teleport sequence.
+                        StartCoroutine(TriggerSufficientEndingSequence());
                     }
                     ApplyDrive(0f, steer, true, brakeTorque);
                     state = State.Ended;
@@ -136,7 +154,7 @@ public class WaypointDriver : MonoBehaviour {
                 break;
 
             case State.Pausing:
-                // pause coroutine drives the transition
+                // The pause coroutine governs this state.
                 break;
 
             case State.DrivingToFinal:
@@ -148,9 +166,10 @@ public class WaypointDriver : MonoBehaviour {
                 break;
 
             case State.FinalBrake:
-                if (!playedSecondInsufficient) {
+                if (!endingSufficient && !playedSecondInsufficient) {
                     playedSecondInsufficient = true;
-                    audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
+                    // Trigger insufficient-ending dialogue and then sphere teleport sequence.
+                    StartCoroutine(TriggerInsufficientEndingSequence());
                 }
                 ApplyDrive(0f, steer, true, brakeTorque);
                 state = State.Ended;
@@ -170,11 +189,26 @@ public class WaypointDriver : MonoBehaviour {
         currentWaypoint++;
     }
 
-    IEnumerator PlayDialogueList(List<AudioClip> clips, float delay) {
-        foreach (var c in clips) {
-            audioManager.PlayAudioClip(c);
-            yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
-            yield return new WaitForSeconds(delay);
+    // Coroutine for sufficient ending:
+    IEnumerator TriggerSufficientEndingSequence() {
+        // Play the entire sufficient dialogue list.
+        yield return StartCoroutine(audioManager.PlayDialogueList(audioManager.sufficientFootageClips, audioManager.sufficientDialogueDelay));
+        // Once dialogue is done, trigger sphere teleport (sufficient: true).
+        if (sphereTeleportFade != null) {
+            sphereTeleportFade.StartTeleportSequence(true);
+        }
+    }
+
+    // Coroutine for insufficient ending:
+    IEnumerator TriggerInsufficientEndingSequence() {
+        // For insufficient, assume the first insufficient clip was already played.
+        // Play the final insufficient dialogue clip.
+        audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
+        // Wait for the clip to finish.
+        yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
+        // Trigger sphere teleport (insufficient: false).
+        if (sphereTeleportFade != null) {
+            sphereTeleportFade.StartTeleportSequence(false);
         }
     }
 
@@ -186,7 +220,7 @@ public class WaypointDriver : MonoBehaviour {
         }
     }
 
-    // ---- Draw Gizmos ----
+    // ---- Debug Visualizations ----
     void OnDrawGizmos() {
         if (waypoints == null) return;
         for (int i = 0; i < waypoints.Count; i++) {
