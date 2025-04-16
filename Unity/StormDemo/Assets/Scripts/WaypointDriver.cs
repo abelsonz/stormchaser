@@ -63,6 +63,7 @@ public class WaypointDriver : MonoBehaviour {
     public float maxTimeInHurricane;
     public float startHurricaneTime;
     public bool tornadoEndingStarted;
+    public int recordedObjectsThreshold = 10;
 
     void Start() {
         startHurricaneTime = -1;
@@ -142,17 +143,13 @@ public class WaypointDriver : MonoBehaviour {
                     // Use manual override if enabled.
                     int effectiveCount = overrideRecordedCount ? manualRecordedCount : camcorder.RecordedCount;
                     
-                    if (effectiveCount >= 7) {
+                    if (effectiveCount >= recordedObjectsThreshold) {
                         endingSufficient = true;
                         state = State.DecisionBrake;
                     } else {
                         endingSufficient = false;
+                        audioManager.PlayAudioClip(audioManager.insufficientFootageClips[0]);
                         state = State.DrivingToFinal;
-                        // For insufficient ending, play the first dialogue clip once.
-                        if (!playedFirstInsufficient) {
-                            playedFirstInsufficient = true;
-                            audioManager.PlayAudioClip(audioManager.insufficientFootageClips[0]);
-                        }
                         currentWaypoint = finalIndex;
                     }
                 } else if (wp.pause) {
@@ -193,7 +190,7 @@ public class WaypointDriver : MonoBehaviour {
                 if (!endingSufficient && !playedSecondInsufficient) {
                     playedSecondInsufficient = true;
                     // Trigger insufficient-ending dialogue and then sphere teleport sequence.
-                    StartCoroutine(TriggerInsufficientEndingSequence());
+                   // StartCoroutine(TriggerInsufficientEndingSequence());
                 }
                 ApplyDrive(0f, steer, true, brakeTorque);
                 state = State.Ended;
@@ -227,12 +224,12 @@ public class WaypointDriver : MonoBehaviour {
     IEnumerator TriggerInsufficientEndingSequence() {
         // For insufficient, assume the first insufficient clip was already played.
         // Play the final insufficient dialogue clip.
-        //audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
+        audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
         // Wait for the clip to finish.
 
-        //yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
-        yield return StartCoroutine(audioManager.PlayDialogueList(audioManager.insufficientFootageClips, audioManager.insufficientDialogueDelay));
-
+        yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
+        //yield return StartCoroutine(audioManager.PlayDialogueList(audioManager.insufficientFootageClips, audioManager.insufficientDialogueDelay));
+        Debug.LogError("insufficient audio trigger");
         // Trigger sphere teleport (insufficient: false).
         if (sphereTeleportFade != null) {
             sphereTeleportFade.StartEndingSequence(false);

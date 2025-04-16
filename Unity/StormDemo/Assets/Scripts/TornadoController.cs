@@ -38,13 +38,21 @@ public class TornadoController : MonoBehaviour
 
     private int currentWaypointIndex = 0;
     private float timeOffset;
+    float timeSinceStart;
 
     void Start()
     {
+      
         timeOffset = Random.Range(0f, 100f);
         if (waypoints != null && waypoints.Count > 0)
             transform.position = waypoints[0].position;
     }
+
+    void  OnEnable()
+    {
+        timeSinceStart = Time.time;
+    }
+
 
     void Update()
     {
@@ -80,8 +88,9 @@ public class TornadoController : MonoBehaviour
 
     void MoveAlongWaypoints()
     {
-        if (Time.timeSinceLevelLoad < movementDelay)
+        if ( (Time.time-timeSinceStart) < movementDelay)
             return;
+       
         if (waypoints == null || waypoints.Count == 0 || currentWaypointIndex >= waypoints.Count)
             return;
 
@@ -94,11 +103,6 @@ public class TornadoController : MonoBehaviour
         {
             currentWaypointIndex++;
 
-            // *** NEW: once we hit waypoint index 4, reduce speed by 3 ***
-            if (currentWaypointIndex == 4)
-                moveSpeed -= 3f;
-
-            return;
         }
 
         Vector3 direction = toTarget.normalized;
