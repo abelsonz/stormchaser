@@ -195,7 +195,7 @@ public class WaypointDriver : MonoBehaviour {
         yield return StartCoroutine(audioManager.PlayDialogueList(audioManager.sufficientFootageClips, audioManager.sufficientDialogueDelay));
         // Once dialogue is done, trigger sphere teleport (sufficient: true).
         if (sphereTeleportFade != null) {
-            sphereTeleportFade.StartTeleportSequence(true);
+            sphereTeleportFade.StartEndingSequence(true);
         }
     }
 
@@ -208,7 +208,7 @@ public class WaypointDriver : MonoBehaviour {
         yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
         // Trigger sphere teleport (insufficient: false).
         if (sphereTeleportFade != null) {
-            sphereTeleportFade.StartTeleportSequence(false);
+            sphereTeleportFade.StartEndingSequence(false);
         }
     }
 

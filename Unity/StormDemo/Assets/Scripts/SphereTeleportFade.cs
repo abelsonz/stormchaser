@@ -16,17 +16,9 @@ public class SphereTeleportFade : MonoBehaviour
     [Tooltip("List of audio sources to fade out.")]
     public List<AudioSource> audioSourcesToFade;
 
-    [Header("Camera Rig Reference")]
-    [Tooltip("User camera rig reference (defaults to Camera.main if left empty).")]
-    public Transform userCameraRig;
+    public GameObject worldParent;
 
-    [Header("Additional Objects")]
-    [Tooltip("Reference to the pickup truck object that should be teleported away on sufficient ending.")]
-    public Transform pickupTruck;
-    [Tooltip("Offset vector to use when teleporting the pickup truck away from the user.")]
-    public Vector3 truckTeleportOffset = new Vector3(50f, 0f, 0f);
-
-    // Cached material for the sphere.
+   /// Cached material for the sphere.
     private Material sphereMaterial;
 
     // Ending flag.
@@ -38,12 +30,20 @@ public class SphereTeleportFade : MonoBehaviour
     // Reference to FollowCar script (if any)
     private FollowCar followCarScript;
 
+    MeshRenderer mr;
+
+    Dictionary<AudioSource, float> originalVolumes = new Dictionary<AudioSource, float>();
+
     void Start()
     {
-        if (userCameraRig == null && Camera.main != null)
-            userCameraRig = Camera.main.transform;
-
-        followCarScript = userCameraRig?.GetComponent<FollowCar>();
+        mr = GetComponent<MeshRenderer>();
+        mr.enabled = true;
+        foreach (AudioSource src in audioSourcesToFade)
+        {
+            if (src != null)
+                originalVolumes[src] = src.volume;
+            src.volume = 0;
+        }
 
         Renderer rend = GetComponent<Renderer>();
         if (rend != null)
@@ -56,68 +56,87 @@ public class SphereTeleportFade : MonoBehaviour
 
             // Start fully transparent
             Color c = sphereMaterial.color;
-            c.a = 0f;
+            c.a = 1f;
             sphereMaterial.color = c;
         }
         else
         {
             Debug.LogError("SphereTeleportFade: Renderer not found!");
         }
+
+       //StartIntroSequence();
+        
     }
 
     void Update()
     {
-        if (followCamera)
-        {
-            Vector3 cameraPos = userCameraRig != null ? userCameraRig.position : Camera.main.transform.position;
-            transform.position = cameraPos;
-        }
+       
+
     }
 
-    public void StartTeleportSequence(bool sufficientEnding)
+    public void StartEndingSequence(bool sufficientEnding)
     {
+        worldParent.SetActive(false);
+        mr.enabled = true;
+        if (sphereMaterial != null)
+        {
+            Color c = sphereMaterial.color;
+            c.a = 0f;
+            sphereMaterial.color = c;
+        }
+
         isSufficientEnding = sufficientEnding;
         float delayTime = isSufficientEnding ? sufficientDelay : insufficientDelay;
-        StartCoroutine(TeleportAndFadeCoroutine(delayTime));
+        StartCoroutine(TeleportAndFadeOutCoroutine(delayTime));
     }
 
-    private IEnumerator TeleportAndFadeCoroutine(float delayTime)
+    private IEnumerator TeleportAndFadeOutCoroutine(float delayTime)
     {
         yield return new WaitForSeconds(delayTime);
-
-        if (isSufficientEnding && followCarScript != null)
-            followCarScript.enabled = false;
-
-        followCamera = true;
-
-        Vector3 cameraPos = userCameraRig != null ? userCameraRig.position : Camera.main.transform.position;
-
-        if (isSufficientEnding && userCameraRig != null)
-        {
-            userCameraRig.position += new Vector3(0f, 3f, 0f);
-            cameraPos = userCameraRig.position;
-        }
-
-        transform.position = cameraPos;
-
-        if (isSufficientEnding && pickupTruck != null)
-        {
-            pickupTruck.SetParent(null);
-            pickupTruck.position = cameraPos + truckTeleportOffset;
-        }
-
-        yield return StartCoroutine(FadeAudioAndSphere());
+        yield return StartCoroutine(FadeOutAudioAndSphere());
     }
 
-    private IEnumerator FadeAudioAndSphere()
+    public void StartIntroSequence()
     {
-        Dictionary<AudioSource, float> originalVolumes = new Dictionary<AudioSource, float>();
-        foreach (AudioSource src in audioSourcesToFade)
+         StartCoroutine(FadeInCoroutine());
+    }
+
+    private IEnumerator FadeInCoroutine()
+    {
+        yield return StartCoroutine(FadeInAudioAndSphere());
+    }
+
+    private IEnumerator FadeInAudioAndSphere()
+    {
+        float timer = 0f;
+        while (timer < fadeDuration)
         {
-            if (src != null)
-                originalVolumes[src] = src.volume;
+            timer += Time.deltaTime;
+            float t = timer / fadeDuration;
+
+            foreach (AudioSource src in audioSourcesToFade)
+            {
+                if (src != null && originalVolumes.ContainsKey(src))
+                    src.volume = Mathf.Lerp(0f,originalVolumes[src], t);
+            }
+
+            if (sphereMaterial != null)
+            {
+                Color c = sphereMaterial.color;
+                c.a = Mathf.Lerp(1f, 0f, t);
+                sphereMaterial.color = c;
+            }
+
+            yield return null;
         }
 
+        mr.enabled = false;
+
+    }
+
+    private IEnumerator FadeOutAudioAndSphere()
+    {
+        
         float timer = 0f;
         while (timer < fadeDuration)
         {
@@ -164,6 +183,6 @@ public class SphereTeleportFade : MonoBehaviour
         mat.DisableKeyword("_ALPHATEST_ON");
         mat.EnableKeyword("_ALPHABLEND_ON");
         mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        mat.renderQueue = 3000;
+        mat.renderQueue = 50000;
     }
 }
