@@ -17,6 +17,10 @@ public class SphereTeleportFade : MonoBehaviour
     public List<AudioSource> audioSourcesToFade;
 
     public GameObject worldParent;
+    public GameObject introEnvironment;
+    public GameObject endEnvironment;
+
+    showEnding ending;
 
    /// Cached material for the sphere.
     private Material sphereMaterial;
@@ -38,6 +42,9 @@ public class SphereTeleportFade : MonoBehaviour
     {
         mr = GetComponent<MeshRenderer>();
         mr.enabled = true;
+        endEnvironment.SetActive(false);
+        introEnvironment.SetActive(true);
+
         foreach (AudioSource src in audioSourcesToFade)
         {
             if (src != null)
@@ -45,6 +52,7 @@ public class SphereTeleportFade : MonoBehaviour
             src.volume = 0;
         }
 
+        ending = endEnvironment.GetComponent<showEnding>();
         Renderer rend = GetComponent<Renderer>();
         if (rend != null)
         {
@@ -83,17 +91,15 @@ public class SphereTeleportFade : MonoBehaviour
             Color c = sphereMaterial.color;
             c.a = 0f;
             sphereMaterial.color = c;
-        }
-
-        isSufficientEnding = sufficientEnding;
-        float delayTime = isSufficientEnding ? sufficientDelay : insufficientDelay;
-        StartCoroutine(TeleportAndFadeOutCoroutine(delayTime));
+        }       
+        StartCoroutine(TeleportAndFadeOutCoroutine(sufficientEnding));
     }
 
-    private IEnumerator TeleportAndFadeOutCoroutine(float delayTime)
+    private IEnumerator TeleportAndFadeOutCoroutine(bool sufficientEnding)
     {
+        float delayTime = isSufficientEnding ? sufficientDelay : insufficientDelay;
         yield return new WaitForSeconds(delayTime);
-        yield return StartCoroutine(FadeOutAudioAndSphere());
+        yield return StartCoroutine(FadeOutAudioAndSphere(sufficientEnding));
     }
 
     public void StartIntroSequence()
@@ -108,6 +114,10 @@ public class SphereTeleportFade : MonoBehaviour
 
     private IEnumerator FadeInAudioAndSphere()
     {
+        //turn off intro env.
+        introEnvironment.SetActive(false);
+
+        //fade in
         float timer = 0f;
         while (timer < fadeDuration)
         {
@@ -117,7 +127,7 @@ public class SphereTeleportFade : MonoBehaviour
             foreach (AudioSource src in audioSourcesToFade)
             {
                 if (src != null && originalVolumes.ContainsKey(src))
-                    src.volume = Mathf.Lerp(0f,originalVolumes[src], t);
+                    src.volume = Mathf.Lerp(0f,originalVolumes[src], t*t);
             }
 
             if (sphereMaterial != null)
@@ -130,13 +140,15 @@ public class SphereTeleportFade : MonoBehaviour
             yield return null;
         }
 
+        //disable fade plane
         mr.enabled = false;
 
     }
 
-    private IEnumerator FadeOutAudioAndSphere()
+    private IEnumerator FadeOutAudioAndSphere(bool type)
     {
         
+        //start fading out
         float timer = 0f;
         while (timer < fadeDuration)
         {
@@ -171,6 +183,10 @@ public class SphereTeleportFade : MonoBehaviour
             c.a = 1f;
             sphereMaterial.color = c;
         }
+
+        //activate end environment
+        endEnvironment.SetActive(true);
+        ending.ShowPoster(type);
     }
 
     // Helper to configure a Standard shader material for transparency
