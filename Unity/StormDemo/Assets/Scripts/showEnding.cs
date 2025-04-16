@@ -6,13 +6,17 @@ public class showEnding : MonoBehaviour
 {
     public GameObject happyPoster;
     public GameObject sadPoster;
-    
+
+    private void Awake()
+    {
+        happyPoster.SetActive(false);
+        sadPoster.SetActive(false);
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        happyPoster.SetActive(false);
-        sadPoster.SetActive(false);
+        
     }
 
     public void ShowPoster(bool happy)
@@ -21,12 +25,13 @@ public class showEnding : MonoBehaviour
         {
             happyPoster.SetActive(true);
             happyPoster.transform.position = this.transform.position + this.transform.forward;
+            happyPoster.transform.LookAt(this.transform.position + 2*this.transform.forward);
         }
         else
         {
             sadPoster.SetActive(true);
             sadPoster.transform.position = this.transform.position + this.transform.forward;
-
+            sadPoster.transform.LookAt(this.transform.position + 2*this.transform.forward);
         }
 
     }

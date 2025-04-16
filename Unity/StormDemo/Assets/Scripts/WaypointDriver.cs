@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 [System.Serializable]
 public class WaypointData {
@@ -59,13 +60,33 @@ public class WaypointDriver : MonoBehaviour {
 
     private bool pauseCoroutineStarted = false;
 
+    public float maxTimeInHurricane;
+    public float startHurricaneTime;
+    public bool tornadoEndingStarted;
+
     void Start() {
+        startHurricaneTime = -1;
+        tornadoEndingStarted = false;
         rb = GetComponent<Rigidbody>();
         if (suspension != null)
             suspension.controlled = false;
     }
 
     void FixedUpdate() {
+
+        //check if picked up
+        if ((rb.isKinematic) && (tornadoEndingStarted == false))
+        {
+            if (startHurricaneTime == -1)
+                startHurricaneTime = Time.time;
+            else if ((Time.time - startHurricaneTime) > maxTimeInHurricane)
+            {
+                tornadoEndingStarted = true;
+                StartCoroutine(TriggerInsufficientEndingSequence());
+            }
+
+        }
+
         if (waypoints == null || waypoints.Count == 0 || state == State.Ended)
             return;
         if (Time.timeSinceLevelLoad < startDelay) {
@@ -109,6 +130,9 @@ public class WaypointDriver : MonoBehaviour {
             float over = speed - usedMax;
             appliedBrake = brakeTorque * Mathf.Clamp01(over * overSpeedBrakeSensitivity);
         }
+
+   
+
 
         switch (state) {
             case State.Driving:
@@ -203,9 +227,12 @@ public class WaypointDriver : MonoBehaviour {
     IEnumerator TriggerInsufficientEndingSequence() {
         // For insufficient, assume the first insufficient clip was already played.
         // Play the final insufficient dialogue clip.
-        audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
+        //audioManager.PlayAudioClip(audioManager.insufficientFootageClips[1]);
         // Wait for the clip to finish.
-        yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
+
+        //yield return new WaitUntil(() => !audioManager.audioSource.isPlaying);
+        yield return StartCoroutine(audioManager.PlayDialogueList(audioManager.insufficientFootageClips, audioManager.insufficientDialogueDelay));
+
         // Trigger sphere teleport (insufficient: false).
         if (sphereTeleportFade != null) {
             sphereTeleportFade.StartEndingSequence(false);

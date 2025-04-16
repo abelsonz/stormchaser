@@ -84,7 +84,7 @@ public class SphereTeleportFade : MonoBehaviour
 
     public void StartEndingSequence(bool sufficientEnding)
     {
-        worldParent.SetActive(false);
+
         mr.enabled = true;
         if (sphereMaterial != null)
         {
@@ -185,8 +185,11 @@ public class SphereTeleportFade : MonoBehaviour
         }
 
         //activate end environment
+        worldParent.SetActive(false);
         endEnvironment.SetActive(true);
         ending.ShowPoster(type);
+        mr.enabled = false;
+        Debug.LogError("showing end env.");
     }
 
     // Helper to configure a Standard shader material for transparency
